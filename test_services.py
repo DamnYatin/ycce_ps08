@@ -37,7 +37,7 @@ def test_all():
 
     # 1. DB Init & Seed
     init_db()
-    seed_db()
+    seed_db(force_reseed=True)
     print("[PASS] DB initialization & seeding passed.")
 
     # 2. Crops & Mandis
@@ -61,7 +61,7 @@ def test_all():
     assert net_res["total_net_return"] == 71340.0, f"Expected 71340.0, got {net_res['total_net_return']}"
     print("[PASS] Net Price Calculator verified (Rs 7,250 - Rs 116 = Rs 7,134/qtl).")
 
-    # 5. Full Ranking Engine on Pitch Deck scenario (Cotton + Nagpur)
+    # 5. Full Ranking Engine on benchmark scenario (Cotton + Nagpur)
     cotton = next((c for c in crops if "cotton" in c["name"].lower()), crops[0])
     nagpur = next((m for m in mandis if "nagpur" in m["name"].lower()), mandis[0])
 
@@ -69,7 +69,7 @@ def test_all():
     winner = ranking_res["recommended_mandi"]
     summary = ranking_res["effective_price_summary"]
 
-    print("\n--- Pitch Deck Ranking Output ---")
+    print("\n--- Benchmark Scenario Ranking Output ---")
     for m in ranking_res["ranked_mandis"]:
         print(f"Rank {m['rank']}: {m['mandi_name']} | Distance: {m['distance_km']}km | Listing: Rs {m['mandi_price_per_qtl']} | Trans: Rs {m['transport_cost_per_qtl']} | Other: Rs {m['other_costs_per_qtl']} | NET: Rs {m['net_price_per_qtl']}/qtl")
 
@@ -88,8 +88,48 @@ def test_all():
     assert len(notifications) > 0, "Should have notifications"
     print(f"[PASS] Analytics and notifications verified. {len(notifications)} active alerts.")
 
+    # 8. Direct Farmer-Buyer Marketplace Flow
+    from services.deal_listing_service import create_deal_listing
+    from services.buyer_feed_service import get_buyer_feed
+    from services.deal_inquiry_service import register_inquiry
+    from models.deal_model import DealModel
+
+    # Test deal creation
+    new_deal_res = create_deal_listing(
+        farmer_name="Babanrao More",
+        farmer_phone="9890123456",
+        crop_id=cotton["id"],
+        quantity_quintal=12.0,
+        price_per_quintal=7300.0,
+        location_name="Nagpur"
+    )
+    assert new_deal_res["status"] == "success", "Deal creation failed"
+    created_id = new_deal_res["deal"]["id"]
+    print(f"[PASS] Deal listing created successfully (ID: {created_id}).")
+
+    # Test Buyer Feed and strict phone number privacy exclusion
+    buyer_deals = get_buyer_feed(crop_filter="Cotton")
+    assert len(buyer_deals) > 0, "Buyer feed should return active cotton deals"
+    for d in buyer_deals:
+        assert "farmer_phone" not in d, "CRITICAL: farmer_phone must NEVER be exposed in public buyer feed!"
+        assert "price_per_quintal" in d
+        assert "posted_ago" in d
+    print(f"[PASS] Buyer feed verified ({len(buyer_deals)} deals). Farmer phone numbers are safely protected and excluded from feed.")
+
+    # Test Inquiry Registration & Contact Unlocking
+    inquiry_res = register_inquiry(deal_id=created_id, buyer_name="Suresh Agro Exports", buyer_phone="9988776655")
+    assert inquiry_res["status"] == "success"
+    assert inquiry_res["farmer_phone"] == "9890123456", "Inquiry must unlock the farmer phone number"
+    print(f"[PASS] Deal inquiry registered and farmer phone unlocked successfully for verified buyer.")
+
+    # Test Mark Deal as Sold
+    DealModel.mark_deal_sold(created_id)
+    inactive_inquiry = register_inquiry(deal_id=created_id, buyer_name="Another Buyer", buyer_phone="9900011223")
+    assert inactive_inquiry["status"] == "error", "Inactive/sold deal must reject new inquiries"
+    print(f"[PASS] Deal marked as sold and correctly rejected subsequent inquiries.")
+
     print("\n==================================================")
-    print("🎉 ALL KRISHIMITRA SERVICE TESTS PASSED!")
+    print("🎉 ALL KRISHIMITRA SERVICE & MARKETPLACE TESTS PASSED!")
     print("==================================================")
 
 if __name__ == "__main__":

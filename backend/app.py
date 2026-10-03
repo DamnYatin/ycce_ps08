@@ -35,6 +35,10 @@ from services.tts_engine import generate_speech
 from services.analytics_reports_service import get_crop_analytics
 from services.notification_service import get_active_notifications
 from services.data_fetcher_service import DataFetcherService
+from services.deal_listing_service import create_deal_listing
+from services.buyer_feed_service import get_buyer_feed
+from services.deal_inquiry_service import register_inquiry
+from models.deal_model import DealModel
 from admin.admin_panel import AdminController
 
 # Resolve frontend directory path
@@ -75,10 +79,94 @@ def serve_admin():
     """Serves Screen 3: Admin Management Screen."""
     return send_from_directory(str(FRONTEND_DIR), "admin.html")
 
+@app.route("/buyer")
+def serve_buyer():
+    """Serves Screen 4: Buyer Marketplace Screen."""
+    buyer_dir = FRONTEND_DIR / "buyer"
+    return send_from_directory(str(buyer_dir), "index.html")
+
 @app.route("/<path:path>")
 def serve_static(path):
     """Serves CSS, JS, and image static assets."""
     return send_from_directory(str(FRONTEND_DIR), path)
+
+# ==========================================
+# Direct Farmer-Buyer Marketplace Endpoints
+# ==========================================
+
+@app.route("/api/deals", methods=["GET", "POST"])
+def manage_deals():
+    """
+    GET: Returns active deals for Buyer Marketplace (strips farmer_phone).
+    POST: Creates a new direct-sale deal listing posted by a farmer.
+    """
+    if request.method == "POST":
+        data = request.get_json() or {}
+        res = create_deal_listing(
+            farmer_name=data.get("farmer_name"),
+            farmer_phone=data.get("farmer_phone"),
+            crop_id=data.get("crop_id"),
+            quantity_quintal=data.get("quantity_quintal"),
+            price_per_quintal=data.get("price_per_quintal"),
+            mandi_id=data.get("mandi_id"),
+            location_name=data.get("location_name", "")
+        )
+        status_code = 200 if res.get("status") == "success" else 400
+        return jsonify(res), status_code
+
+    # GET request - buyer feed
+    crop_filter = request.args.get("crop")
+    location_filter = request.args.get("location")
+    sort_by = request.args.get("sort", "newest")
+
+    feed = get_buyer_feed(
+        crop_filter=crop_filter,
+        location_filter=location_filter,
+        sort_by=sort_by
+    )
+    return jsonify({"status": "success", "deals": feed, "count": len(feed)})
+
+@app.route("/api/deals/<int:deal_id>", methods=["GET"])
+def get_deal_detail(deal_id):
+    """Returns single deal details (excluding farmer_phone)."""
+    deal = DealModel.get_deal_by_id(deal_id)
+    if not deal:
+        return jsonify({"status": "error", "message": "Deal not found"}), 404
+    
+    sanitized = {k: v for k, v in deal.items() if k != "farmer_phone"}
+    return jsonify({"status": "success", "deal": sanitized})
+
+@app.route("/api/deals/farmer", methods=["GET"])
+def get_farmer_deals_list():
+    """Returns farmer's listings along with live inquiry counts."""
+    phone = request.args.get("phone")
+    deals = DealModel.get_farmer_deals(farmer_phone=phone)
+    return jsonify({"status": "success", "deals": deals})
+
+@app.route("/api/deals/<int:deal_id>/sold", methods=["PATCH"])
+def mark_deal_as_sold(deal_id):
+    """Marks a deal listing as sold."""
+    DealModel.mark_deal_sold(deal_id)
+    return jsonify({"status": "success", "message": "Deal marked as sold!"})
+
+@app.route("/api/deals/<int:deal_id>", methods=["DELETE"])
+def cancel_deal(deal_id):
+    """Cancels/removes a deal listing."""
+    DealModel.delete_deal(deal_id)
+    return jsonify({"status": "success", "message": "Deal cancelled successfully."})
+
+@app.route("/api/deals/<int:deal_id>/inquire", methods=["POST"])
+def inquire_deal(deal_id):
+    """
+    Logs buyer inquiry and unlocks the farmer's contact phone number.
+    """
+    data = request.get_json() or {}
+    buyer_name = data.get("buyer_name", "")
+    buyer_phone = data.get("buyer_phone", "")
+
+    result = register_inquiry(deal_id, buyer_name, buyer_phone)
+    status_code = 200 if result.get("status") == "success" else 400
+    return jsonify(result), status_code
 
 # ==========================================
 # Farmer & Market Comparison API Endpoints
@@ -119,6 +207,14 @@ def compare_mandis():
         quantity = float(quantity) if float(quantity) > 0 else 1.0
     except ValueError:
         return jsonify({"status": "error", "message": "Invalid numeric parameter format."}), 400
+
+    # Automatically refresh live rates from Agmarknet / live feed on start
+    auto_refresh = data.get("refresh", True)
+    if auto_refresh:
+        try:
+            DataFetcherService.fetch_and_update_prices(crop_id=crop_id)
+        except Exception as err:
+            pass
 
     result = rank_and_recommend_mandis(
         crop_id=crop_id,

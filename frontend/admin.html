@@ -127,11 +127,11 @@
       <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 1rem;">🏛️ Manage Mandis (APMCs)</h2>
       
       <!-- Add Mandi Form -->
-      <form id="addMandiForm" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 0.5rem; margin-bottom: 1.5rem;">
+      <form id="addMandiForm" class="admin-form-grid-4">
         <input type="text" id="newMandiName" class="form-input" placeholder="Mandi Name (e.g. Wardha / वर्धा)" required>
         <input type="number" id="newMandiLat" class="form-input" step="0.0001" placeholder="Latitude">
         <input type="number" id="newMandiLng" class="form-input" step="0.0001" placeholder="Longitude">
-        <button type="submit" class="btn btn-primary" style="width: auto;">+ Add</button>
+        <button type="submit" class="btn btn-primary">+ Add Mandi</button>
       </form>
 
       <div class="table-responsive">
@@ -154,11 +154,11 @@
       <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 1rem;">📏 Inter-Mandi Distances</h2>
       
       <!-- Add/Set Distance Form -->
-      <form id="setDistanceForm" style="display: grid; grid-template-columns: 1.5fr 1.5fr 1fr auto; gap: 0.5rem; margin-bottom: 1.5rem;">
+      <form id="setDistanceForm" class="admin-form-grid-4">
         <select id="distFromSelect" class="form-select" required></select>
         <select id="distToSelect" class="form-select" required></select>
         <input type="number" id="distKmInput" class="form-input" step="0.1" placeholder="Distance (km)" required>
-        <button type="submit" class="btn btn-primary" style="width: auto;">Set Distance</button>
+        <button type="submit" class="btn btn-primary">Set Distance</button>
       </form>
 
       <div class="table-responsive">
@@ -181,12 +181,12 @@
       <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 1rem;">📦 Mandi Handling & Statutory Fees</h2>
       
       <!-- Update Cost Form -->
-      <form id="updateCostForm" style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr auto; gap: 0.5rem; margin-bottom: 1.5rem;">
+      <form id="updateCostForm" class="admin-form-grid-4" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) auto;">
         <select id="costMandiSelect" class="form-select" required></select>
         <input type="number" id="costLoadingInput" class="form-input" step="0.5" placeholder="Loading (₹)" value="0">
         <input type="number" id="costUnloadingInput" class="form-input" step="0.5" placeholder="Unloading (₹)" value="0">
         <input type="number" id="costMarketChargeInput" class="form-input" step="0.5" placeholder="Market Fee (₹)" value="0">
-        <button type="submit" class="btn btn-primary" style="width: auto;">Save</button>
+        <button type="submit" class="btn btn-primary">Save Fees</button>
       </form>
 
       <div class="table-responsive">
@@ -210,11 +210,11 @@
       <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 1rem;">🏷️ Override Active Mandi Prices</h2>
       
       <!-- Override Price Form -->
-      <form id="updatePriceForm" style="display: grid; grid-template-columns: 1.5fr 1.5fr 1.2fr auto; gap: 0.5rem; margin-bottom: 1.5rem;">
+      <form id="updatePriceForm" class="admin-form-grid-4">
         <select id="priceCropSelect" class="form-select" required></select>
         <select id="priceMandiSelect" class="form-select" required></select>
         <input type="number" id="pricePerQtlInput" class="form-input" step="1" placeholder="Price (₹/qtl)" required>
-        <button type="submit" class="btn btn-primary" style="width: auto;">Update Price</button>
+        <button type="submit" class="btn btn-primary">Update Price</button>
       </form>
 
       <div class="table-responsive">

@@ -5,7 +5,7 @@
  *   - Reads selected Crop, Home Mandi, and Quantity from URL or localStorage
  *   - Calls POST /api/compare to get ranked mandis, winner recommendation & cost breakdown
  *   - Renders 🏆 Champion Winner Recommendation Card
- *   - Renders Effective Price Summary Breakdown Card matching pitch deck specs
+ *   - Renders Effective Price Summary Breakdown Card with transparent cost components
  *   - Renders ranked list of alternative mandis
  *   - "🔊 Speak Result" Multilingual TTS with gTTS audio buffer & browser SpeechSynthesis
  *   - "🗺️ Navigate to Mandi" Google Maps directions launcher
@@ -40,7 +40,10 @@ const dashboardTranslations = {
     marketSpread: "Regional Price Spread",
     avgPrice: "7-Day Regional Avg",
     extraEarningNotice: "💡 Selling at {mandi} earns ₹{extra} more per quintal than your home market!",
-    refreshPricesBtn: "⚡ Refresh Live Rates"
+    refreshPricesBtn: "⚡ Refresh Live Rates",
+    refreshingRates: "⚡ Fetching latest live rates...",
+    ratesRefreshed: "✅ Live rates refreshed successfully",
+    ratesRefreshError: "⚠️ Could not refresh live rates"
   },
   hi: {
     appTitle: "कृषिमित्र",
@@ -66,7 +69,10 @@ const dashboardTranslations = {
     marketSpread: "क्षेत्रीय भाव अंतर",
     avgPrice: "7 दिवसीय औसत भाव",
     extraEarningNotice: "💡 {mandi} में बेचने पर अपनी गृह मंडी से ₹{extra} प्रति क्विंटल अधिक मुनाफा मिलेगा!",
-    refreshPricesBtn: "⚡ लाइव भाव रीफ्रेश करें"
+    refreshPricesBtn: "⚡ लाइव भाव रीफ्रेश करें",
+    refreshingRates: "⚡ नवीनतम लाइव भाव प्राप्त किए जा रहे हैं...",
+    ratesRefreshed: "✅ लाइव भाव सफलतापूर्वक रीफ्रेश हो गए",
+    ratesRefreshError: "⚠️ लाइव भाव रीफ्रेश नहीं हो सके"
   },
   mr: {
     appTitle: "कृषि मित्र",
@@ -92,7 +98,10 @@ const dashboardTranslations = {
     marketSpread: "बाजारभाव फरक",
     avgPrice: "७ दिवसांची सरासरी",
     extraEarningNotice: "💡 {mandi} येथे माल विकल्यास गृह मंडीपेक्षा क्विंटलमागे ₹{extra} जास्त मिळतील!",
-    refreshPricesBtn: "⚡ ताजे दर अपडेट करा"
+    refreshPricesBtn: "⚡ ताजे दर अपडेट करा",
+    refreshingRates: "⚡ ताजे बाजारभाव आणत आहे...",
+    ratesRefreshed: "✅ ताजे दर यशस्वीरित्या अपडेट झाले",
+    ratesRefreshError: "⚠️ ताजे दर अपडेट होऊ शकले नाहीत"
   }
 };
 
@@ -153,12 +162,14 @@ function formatName(rawName, lang) {
 // ==========================================
 // 3. Fetch Comparison Data from POST /api/compare
 // ==========================================
-async function fetchComparisonData() {
+async function fetchComparisonData(isSilent = false) {
   const loadingElem = document.getElementById("loadingIndicator");
   const contentElem = document.getElementById("dashboardContent");
 
-  if (loadingElem) loadingElem.style.display = "block";
-  if (contentElem) contentElem.style.display = "none";
+  if (!isSilent) {
+    if (loadingElem) loadingElem.style.display = "block";
+    if (contentElem) contentElem.style.display = "none";
+  }
 
   try {
     const response = await fetch("/api/compare", {
@@ -184,8 +195,10 @@ async function fetchComparisonData() {
     console.error("Comparison fetch failed:", error);
     showToast("⚠️ Network error while fetching mandi comparisons.");
   } finally {
-    if (loadingElem) loadingElem.style.display = "none";
-    if (contentElem) contentElem.style.display = "block";
+    if (!isSilent) {
+      if (loadingElem) loadingElem.style.display = "none";
+      if (contentElem) contentElem.style.display = "block";
+    }
   }
 }
 
@@ -237,7 +250,7 @@ function renderDashboardUI(data) {
     }
   }
 
-  // 3. Effective Price Summary Card (Matching Pitch Deck specs)
+  // 3. Effective Price Summary Card (Transparent Cost Breakdown)
   if (summary) {
     document.getElementById("summaryListingPrice").textContent = `₹${summary.mandi_price_per_qtl.toLocaleString()} / qtl`;
     document.getElementById("summaryTransportCost").textContent = `₹${summary.transport_cost_per_qtl.toLocaleString()} / qtl`;
@@ -394,17 +407,51 @@ function speakWithBrowserTTS(text, lang, onEndCallback) {
 // Refresh Live Rates Handler
 async function handleRefreshRates() {
   const btn = document.getElementById("refreshPricesBtn");
-  if (btn) btn.disabled = true;
-  showToast("⚡ Fetching latest Agmarknet live price updates...");
+  const statusContainer = document.getElementById("refreshStatusMessage");
+  const statusText = document.getElementById("refreshStatusText");
+  const dict = dashboardTranslations[currentLang] || dashboardTranslations.en;
+
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = "0.7";
+    btn.textContent = dict.refreshingRates;
+  }
+  showToast(dict.refreshingRates);
 
   try {
     await fetch(`/api/refresh-prices?crop_id=${cropId}`, { method: "POST" });
-    await fetchComparisonData();
-    showToast("✅ Prices updated successfully!");
+    await fetchComparisonData(true);
+
+    const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const successMsg = `${dict.ratesRefreshed} (${timeStr})`;
+
+    showToast(successMsg);
+
+    if (statusContainer && statusText) {
+      statusText.textContent = successMsg;
+      statusContainer.style.display = "flex";
+      statusContainer.style.opacity = "1";
+      setTimeout(() => {
+        statusContainer.style.transition = "opacity 0.8s ease";
+        statusContainer.style.opacity = "0";
+        setTimeout(() => {
+          statusContainer.style.display = "none";
+        }, 800);
+      }, 5000);
+    }
   } catch (e) {
-    showToast("⚠️ Could not refresh prices.");
+    console.error("Refresh error:", e);
+    showToast(dict.ratesRefreshError);
+    if (statusContainer && statusText) {
+      statusText.textContent = dict.ratesRefreshError;
+      statusContainer.style.display = "flex";
+    }
   } finally {
-    if (btn) btn.disabled = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = "1";
+      btn.textContent = dict.refreshPricesBtn;
+    }
   }
 }
 
@@ -644,7 +691,186 @@ function renderGoogleMapMarkers(data) {
 }
 
 // ==========================================
-// 8. Initialization & Event Handlers
+// 8. Direct Marketplace: Deal Posting & Management Logic
+// ==========================================
+
+function populateDealForm(data) {
+  const crop = data.crop;
+  const winner = data.recommended_mandi;
+  const homeMandi = data.home_mandi;
+
+  const cropNameInput = document.getElementById("dealCropName");
+  const cropIdInput = document.getElementById("dealCropId");
+  const quantityInput = document.getElementById("dealQuantity");
+  const askingPriceInput = document.getElementById("dealAskingPrice");
+  const locationInput = document.getElementById("dealLocation");
+  const mandiIdInput = document.getElementById("dealMandiId");
+
+  if (cropNameInput && crop) {
+    cropNameInput.value = crop.name;
+  }
+  if (cropIdInput && crop) {
+    cropIdInput.value = crop.id;
+  }
+  if (quantityInput) {
+    quantityInput.value = data.quantity_quintal || quantity || 10;
+  }
+  if (askingPriceInput && winner) {
+    // Smart pre-fill: use engine's calculated recommended net price as a baseline suggestion!
+    askingPriceInput.value = Math.round(winner.net_price_per_qtl);
+  }
+  if (locationInput) {
+    locationInput.value = (homeMandi && homeMandi.name) ? homeMandi.name.split("(")[0].trim() : "Nagpur";
+  }
+  if (mandiIdInput && homeMandi) {
+    mandiIdInput.value = homeMandi.id;
+  }
+}
+
+async function handlePostDeal(e) {
+  e.preventDefault();
+  const farmerName = document.getElementById("dealFarmerName").value.trim();
+  const farmerPhone = document.getElementById("dealFarmerPhone").value.trim();
+  const cropId = document.getElementById("dealCropId").value;
+  const quantity = parseFloat(document.getElementById("dealQuantity").value);
+  const askingPrice = parseFloat(document.getElementById("dealAskingPrice").value);
+  const location = document.getElementById("dealLocation").value.trim();
+  const mandiId = document.getElementById("dealMandiId").value;
+  const submitBtn = document.getElementById("postDealSubmitBtn");
+
+  if (!farmerName || !farmerPhone || !cropId || isNaN(quantity) || isNaN(askingPrice) || !location) {
+    showToast("⚠️ Please fill out all deal fields.");
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Posting Deal...";
+
+  try {
+    const res = await fetch("/api/deals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        farmer_name: farmerName,
+        farmer_phone: farmerPhone,
+        crop_id: cropId,
+        quantity_quintal: quantity,
+        price_per_quintal: askingPrice,
+        location_name: location,
+        mandi_id: mandiId ? parseInt(mandiId) : null
+      })
+    });
+
+    const data = await res.json();
+    if (data.status === "success") {
+      showToast("🎉 Deal listed live on Buyer Marketplace!");
+      loadFarmerDeals(farmerPhone);
+    } else {
+      showToast("⚠️ " + (data.message || "Failed to post deal."));
+    }
+  } catch (err) {
+    console.error("Deal post error:", err);
+    showToast("⚠️ Network error while posting deal.");
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "🚀 Post Deal to Buyer Marketplace";
+  }
+}
+
+async function loadFarmerDeals(phone) {
+  const container = document.getElementById("farmerDealsContainer");
+  if (!container) return;
+
+  const farmerPhone = phone || (document.getElementById("dealFarmerPhone") ? document.getElementById("dealFarmerPhone").value.trim() : "");
+  const url = farmerPhone ? `/api/deals/farmer?phone=${encodeURIComponent(farmerPhone)}` : "/api/deals/farmer";
+
+  try {
+    const res = await fetch(url);
+    const result = await res.json();
+
+    if (result.status === "success" && result.deals && result.deals.length > 0) {
+      container.innerHTML = "";
+      result.deals.forEach(deal => {
+        const isSold = deal.status === "sold";
+        const card = document.createElement("div");
+        card.style.cssText = `
+          background: ${isSold ? "#f8fafc" : "#ffffff"};
+          border: 1.5px solid ${isSold ? "#cbd5e1" : "rgba(22, 101, 52, 0.2)"};
+          border-radius: var(--radius-md);
+          padding: 0.85rem 1rem;
+          margin-bottom: 0.65rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+        `;
+
+        card.innerHTML = `
+          <div>
+            <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);">
+              ${deal.crop_name} — <strong>₹${deal.price_per_quintal.toLocaleString()} / qtl</strong>
+              <span style="font-size: 0.75rem; padding: 2px 6px; border-radius: var(--radius-full); margin-left: 6px; background: ${isSold ? '#e2e8f0' : '#dcfce7'}; color: ${isSold ? '#475569' : '#166534'};">
+                ${deal.status.toUpperCase()}
+              </span>
+            </div>
+            <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 2px;">
+              <span>⚖️ ${deal.quantity_quintal} qtl</span> &bull; 
+              <span>📍 ${deal.location_name}</span> &bull; 
+              <span>🕒 ${deal.posted_at.split(' ')[0]}</span>
+            </div>
+            <div style="margin-top: 4px; font-size: 0.85rem; font-weight: 600; color: #0284c7;">
+              💬 ${deal.inquiry_count} Buyer Inquiries Received
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            ${!isSold ? `
+              <button class="btn btn-outline" style="min-height:30px; padding:2px 8px; font-size:0.8rem; width:auto; border-color:#16a34a; color:#166534;" onclick="handleMarkSold(${deal.id})">
+                ✅ Mark Sold
+              </button>
+            ` : ''}
+            <button class="btn btn-outline" style="min-height:30px; padding:2px 8px; font-size:0.8rem; width:auto; border-color:#f87171; color:#b91c1c;" onclick="handleDeleteDeal(${deal.id})">
+              🗑️ Delete
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    } else {
+      container.innerHTML = `
+        <div style="text-align:center; padding:1.25rem; color:var(--text-muted); font-size:0.9rem;">
+          No direct-sale listings posted yet. Fill out the form above to list your harvest for buyers!
+        </div>
+      `;
+    }
+  } catch (err) {
+    container.innerHTML = `<p style="font-size:0.85rem; color:#b91c1c; text-align:center;">Failed to load listings.</p>`;
+  }
+}
+
+window.handleMarkSold = async function(dealId) {
+  try {
+    await fetch(`/api/deals/${dealId}/sold`, { method: "PATCH" });
+    showToast("✅ Deal marked as sold!");
+    loadFarmerDeals();
+  } catch (e) {
+    showToast("⚠️ Could not update deal.");
+  }
+};
+
+window.handleDeleteDeal = async function(dealId) {
+  if (!confirm("Are you sure you want to remove this deal listing?")) return;
+  try {
+    await fetch(`/api/deals/${dealId}`, { method: "DELETE" });
+    showToast("🗑️ Deal listing removed.");
+    loadFarmerDeals();
+  } catch (e) {
+    showToast("⚠️ Could not remove deal.");
+  }
+};
+
+// ==========================================
+// 9. Initialization & Event Handlers
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
   // Language button clicks
@@ -659,6 +885,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const refreshBtn = document.getElementById("refreshPricesBtn");
   if (refreshBtn) refreshBtn.addEventListener("click", handleRefreshRates);
 
+  // Deal Form Listener
+  const dealForm = document.getElementById("postDealForm");
+  if (dealForm) dealForm.addEventListener("submit", handlePostDeal);
+
   setLanguage(currentLang);
-  fetchComparisonData();
+  fetchComparisonData().then(() => {
+    if (currentComparisonData) {
+      populateDealForm(currentComparisonData);
+      loadFarmerDeals();
+    }
+  });
 });

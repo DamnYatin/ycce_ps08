@@ -17,7 +17,7 @@ const translations = {
   en: {
     appTitle: "KrishiMitra",
     appSubtitle: "Mandi Price & Transport Estimator",
-    bannerTitle: "Market Discovery Engine",
+    bannerTitle: "KrishiMitra Market Discovery Engine",
     selectCropLabel: "Select Your Crop",
     selectCropPlaceholder: "Choose crop...",
     selectMandiLabel: "Your Home Mandi / Village",
@@ -32,7 +32,7 @@ const translations = {
   hi: {
     appTitle: "कृषिमित्र",
     appSubtitle: "मंडी भाव एवं परिवहन खर्च कैलकुलेटर",
-    bannerTitle: "बाजार मूल्य खोज प्रणाली",
+    bannerTitle: "कृषिमित्र बाजार मूल्य खोज प्रणाली",
     selectCropLabel: "अपनी फसल चुनें",
     selectCropPlaceholder: "फसल का चयन करें...",
     selectMandiLabel: "आपकी नजदीकी / गृह मंडी",
@@ -47,7 +47,7 @@ const translations = {
   mr: {
     appTitle: "कृषि मित्र",
     appSubtitle: "बाजारभाव आणि वाहतूक खर्च गणक",
-    bannerTitle: "शेतकरी बाजार जोडणी",
+    bannerTitle: "कृषि मित्र शेतकरी बाजार जोडणी",
     selectCropLabel: "आपले पीक निवडा",
     selectCropPlaceholder: "पीक निवडा...",
     selectMandiLabel: "आपली जवळची / गृह बाजारपेठ (मंडी)",

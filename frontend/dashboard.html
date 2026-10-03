@@ -26,11 +26,17 @@
         </div>
       </a>
 
-      <!-- Multilingual Language Selector -->
-      <div class="lang-selector" role="group" aria-label="Language Selector">
-        <button class="lang-btn" data-lang="en">EN</button>
-        <button class="lang-btn" data-lang="hi">हिन्दी</button>
-        <button class="lang-btn" data-lang="mr">मराठी</button>
+      <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <a href="/buyer" class="btn btn-outline" style="min-height: 32px; padding: 2px 10px; font-size: 0.8rem; background: rgba(255,255,255,0.2); color: #fff; border-color: rgba(255,255,255,0.4); width: auto;">
+          🛒 Buyer Market
+        </a>
+
+        <!-- Multilingual Language Selector -->
+        <div class="lang-selector" role="group" aria-label="Language Selector">
+          <button class="lang-btn" data-lang="en">EN</button>
+          <button class="lang-btn" data-lang="hi">हिन्दी</button>
+          <button class="lang-btn" data-lang="mr">मराठी</button>
+        </div>
       </div>
     </div>
   </header>
@@ -75,7 +81,7 @@
 
         <div id="winnerProfitCallout" class="winner-benefit-callout" style="display:none;"></div>
 
-        <!-- Effective Price Summary Card (Pitch Deck Breakdown Box) -->
+        <!-- Effective Price Summary Card (Cost Breakdown Box) -->
         <div class="summary-table-box">
           <div class="summary-row">
             <span data-i18n="mandiPriceLabel">Mandi Listing Price</span>
@@ -129,6 +135,11 @@
           </button>
         </div>
 
+        <div id="refreshStatusMessage" style="display:none; margin-bottom: 0.75rem; padding: 6px 12px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 600; color: #065f46; align-items: center; gap: 6px;">
+          <span class="status-icon">✅</span>
+          <span id="refreshStatusText">Live rates refreshed successfully</span>
+        </div>
+
         <div id="rankedMandisContainer">
           <!-- Dynamically populated by dashboard.js -->
         </div>
@@ -162,10 +173,83 @@
         </div>
       </section>
 
+      <!-- 6. Direct Marketplace: List Your Deal -->
+      <section class="card" id="listDealSection" style="border: 2px solid rgba(22, 101, 52, 0.25); background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--primary-dark); margin: 0;">
+            📢 List Your Deal — Sell Directly to Buyers
+          </h3>
+          <span style="font-size: 0.78rem; font-weight: 700; background: var(--primary-bg); color: var(--primary-dark); padding: 0.2rem 0.6rem; border-radius: var(--radius-full);">
+            🛡️ Spam-Protected
+          </span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Prefer selling directly to verified traders without mandi intermediaries? List your harvest here. Your phone number stays hidden until genuine buyers express interest.
+        </p>
+
+        <form id="postDealForm" class="form-grid-2">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 0.85rem;">👤 Your Name</label>
+            <input type="text" id="dealFarmerName" class="form-input" placeholder="e.g. Ramesh Patil" required value="Ramesh Patil">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 0.85rem;">📞 Phone Number</label>
+            <input type="tel" id="dealFarmerPhone" class="form-input" placeholder="10-digit number" required value="9823012345" pattern="[0-9]{10}">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 0.85rem;">🌱 Crop</label>
+            <input type="text" id="dealCropName" class="form-input" readonly style="background: #f1f5f9; font-weight: 600;">
+            <input type="hidden" id="dealCropId">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 0.85rem;">⚖️ Quantity (Quintals)</label>
+            <input type="number" id="dealQuantity" class="form-input" step="0.1" min="0.5" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 0.85rem;">💰 Asking Price (₹ / quintal)</label>
+            <input type="number" id="dealAskingPrice" class="form-input" step="1" required style="font-weight: 700; color: var(--primary-dark);">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 0.85rem;">📍 Your Location</label>
+            <input type="text" id="dealLocation" class="form-input" placeholder="e.g. Nagpur / Amravati" required>
+            <input type="hidden" id="dealMandiId">
+          </div>
+
+          <div style="grid-column: 1 / -1; margin-top: 0.5rem;">
+            <button type="submit" class="btn btn-primary" id="postDealSubmitBtn" style="font-size: 0.95rem;">
+              🚀 Post Deal to Buyer Marketplace
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- 7. Farmer's Active Listings & Inquiries -->
+      <section class="card" id="farmerDealsSection">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin: 0;">
+            📋 My Active Deal Listings
+          </h3>
+          <a href="/buyer" class="btn btn-outline" style="min-height: 32px; padding: 2px 10px; font-size: 0.82rem; width: auto;">
+            🛒 Open Buyer Market
+          </a>
+        </div>
+        <div id="farmerDealsContainer">
+          <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 1rem;">Loading your active deals...</p>
+        </div>
+      </section>
+
       <!-- Bottom Navigation Footer -->
-      <div style="text-align: center; margin-top: 1.5rem;">
-        <a href="/" class="btn btn-secondary" style="width: auto; padding: 0.6rem 1.5rem; display: inline-flex;">
-          ⬅️ Check Another Crop / Quantity
+      <div style="text-align: center; margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+        <a href="/" class="btn btn-secondary" style="width: auto; padding: 0.6rem 1.25rem; display: inline-flex;">
+          ⬅️ Check Another Crop
+        </a>
+        <a href="/buyer" class="btn btn-primary" style="width: auto; padding: 0.6rem 1.25rem; display: inline-flex; background: #0f766e;">
+          🛒 View Buyer Marketplace
         </a>
       </div>
 

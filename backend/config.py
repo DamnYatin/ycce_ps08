@@ -41,7 +41,7 @@ class Config:
     # Admin Panel Credentials & Auth Token
     ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin")
-    ADMIN_AUTH_TOKEN = "krishimitra-admin-auth-token-prod"
+    ADMIN_AUTH_TOKEN = "krishimitra-admin-auth-token-secure"
     
     # Default transport rate per km per quintal (INR)
     DEFAULT_TRANSPORT_RATE = 0.80

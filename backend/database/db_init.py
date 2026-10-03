@@ -75,6 +75,31 @@ def init_db(db_path=None):
         FOREIGN KEY (crop_id) REFERENCES crops(id) ON DELETE CASCADE,
         FOREIGN KEY (mandi_id) REFERENCES mandis(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS deals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        farmer_name TEXT NOT NULL,
+        farmer_phone TEXT,
+        crop_id INTEGER NOT NULL,
+        crop_name TEXT NOT NULL,
+        quantity_quintal REAL NOT NULL,
+        price_per_quintal REAL NOT NULL,
+        mandi_id INTEGER,
+        location_name TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'active',
+        posted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (crop_id) REFERENCES crops(id) ON DELETE CASCADE,
+        FOREIGN KEY (mandi_id) REFERENCES mandis(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS deal_inquiries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        deal_id INTEGER NOT NULL,
+        buyer_name TEXT,
+        buyer_phone TEXT,
+        inquired_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (deal_id) REFERENCES deals(id) ON DELETE CASCADE
+    );
     """
 
     with get_db_connection(db_path) as conn:
