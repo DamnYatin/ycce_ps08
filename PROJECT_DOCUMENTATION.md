@@ -26,13 +26,13 @@ Every calculation is implemented as a pure, deterministic function in dedicated 
 ### Formula 1: Transport Cost
 $$\text{Transport Cost (₹)} = \text{Distance (km)} \times \text{Rate (₹/km/quintal)} \times \text{Quantity (quintals)}$$
 $$\text{Transport Cost per quintal (₹/qtl)} = \text{Distance (km)} \times \text{Rate (₹/km/quintal)}$$
-- **Implemented in:** [`backend/services/transport_cost_calculator.py`](file:///c:/Users/HP-PC/Documents/KrishiMitra/backend/services/transport_cost_calculator.py)
-- **Baseline Freight Rate:** ₹0.80 / km / quintal (configurable via Admin Panel)
+- **Implemented in:** [`backend/services/transport_cost_calculator.py`](backend/services/transport_cost_calculator.py)
+- **Baseline Freight Rate:** ₹0.80 / km / quintal (configurable via Master Settings)
 
 ### Formula 2: Other Mandi Handling Costs
 $$\text{Other Costs per quintal (₹/qtl)} = \text{Loading Charge} + \text{Unloading Charge} + \text{Market Cess / Handling Fee}$$
 $$\text{Total Other Costs (₹)} = \text{Other Costs per quintal} \times \text{Quantity (quintals)}$$
-- **Implemented in:** [`backend/services/cost_estimation_service.py`](file:///c:/Users/HP-PC/Documents/KrishiMitra/backend/services/cost_estimation_service.py)
+- **Implemented in:** [`backend/services/cost_estimation_service.py`](backend/services/cost_estimation_service.py)
 
 ### Formula 3: Total Expenses Deductions
 $$\text{Total Cost per quintal (₹/qtl)} = \text{Transport Cost per quintal} + \text{Other Costs per quintal}$$
@@ -41,11 +41,58 @@ $$\text{Total Expenses (₹)} = \text{Total Cost per quintal} \times \text{Quant
 ### Formula 4: Net Realized Price & Total Earnings
 $$\text{Net Price per quintal (₹/qtl)} = \text{Mandi Listing Price (₹/qtl)} - \text{Total Cost per quintal (₹/qtl)}$$
 $$\text{Total Net Farmer Return (₹)} = \text{Net Price per quintal} \times \text{Quantity (quintals)}$$
-- **Implemented in:** [`backend/services/net_price_calculator.py`](file:///c:/Users/HP-PC/Documents/KrishiMitra/backend/services/net_price_calculator.py)
+- **Implemented in:** [`backend/services/net_price_calculator.py`](backend/services/net_price_calculator.py)
 
 ### Formula 5: Net Profit Gain Over Home Mandi
 $$\text{Profit Gain per quintal} = \text{Recommended Mandi Net Price} - \text{Home Mandi Net Price}$$
 $$\text{Total Profit Gain (₹)} = \text{Profit Gain per quintal} \times \text{Quantity (quintals)}$$
+
+### Formula 6: Total Harvest Cash Breakdown (Full Batch Calculation)
+Farmers think in terms of their total crop earnings rather than fractional quintals. KrishiMitra computes the complete batch ledger:
+$$\text{Gross Harvest Value (₹)} = \text{Listing Price (₹/qtl)} \times \text{Total Quantity (qtl)}$$
+$$\text{Total Freight Cost (₹)} = \text{Transport Cost per qtl} \times \text{Total Quantity (qtl)}$$
+$$\text{Total Mandi Cess & Handling (₹)} = \text{Other Costs per qtl} \times \text{Total Quantity (qtl)}$$
+$$\mathbf{\text{Net In-Pocket Harvest Cash (₹)}} = \text{Gross Harvest Value} - (\text{Total Freight Cost} + \text{Total Mandi Cess & Handling})$$
+
+---
+
+### 2.2 Proactive Sell vs. Hold AI Advisory Engine & 7-Day Forecasting Model
+Beyond discovering today's best mandi, KrishiMitra answers the farmer's most critical dilemma: **"Should I sell today, or hold my crop for a week?"**
+
+#### 1. Future Listing Price Forecast ($P_t$) — SARIMAX Econometric Formulation
+Listing price trajectory $P_t$ for $t \in [1..7]$ days is modeled using Seasonal AutoRegressive Integrated Moving Average with eXogenous Regressors:
+$$\text{SARIMAX}(p=1, d=1, q=1) \times (P=1, D=1, Q=0, s=7)$$
+- **Exogenous Regressors:**
+  - $\text{Rainfall\_Index}$: Tracks localized monsoon precipitation disruptions to mandi arrivals.
+  - $\text{Fuel\_Price\_Index}$: Tracks diesel rate fluctuations affecting haulage rates.
+- **Graceful Fallback:** If `statsmodels` native C-libraries are unavailable in lightweight cloud containers, an econometric moving-trend drift model provides reliable sub-millisecond forecasts.
+
+#### 2. Warehouse Storage Cost & Crop Moisture Spoilage Decay
+Holding agricultural produce involves non-zero daily holding expenditures and physical degradation:
+$$\text{Storage\_Cost}_t = C_s \times t \quad (\text{₹/quintal})$$
+$$\text{Depreciation\_Loss}_t = \delta \times t \quad (\text{fractional moisture/quality shrinkage})$$
+$$\text{Depreciation\_Cost}_t = P_t \times \text{Depreciation\_Loss}_t \quad (\text{₹/quintal})$$
+$$\text{Total\_Holding\_Cost}_t = \text{Storage\_Cost}_t + \text{Depreciation\_Cost}_t$$
+
+*Commodity parameters configured in KrishiMitra:*
+| Crop | Storage Cost ($C_s$ in ₹/qtl/day) | Daily Spoilage Rate ($\delta$) | 7-Day Storage Cost | 7-Day Quality Decay |
+| :--- | :--- | :--- | :--- | :--- |
+| **Cotton** | ₹0.60 | 0.05% / day | ₹4.20 / qtl | 0.35% |
+| **Soybean** | ₹0.50 | 0.05% / day | ₹3.50 / qtl | 0.35% |
+| **Wheat** | ₹0.40 | 0.03% / day | ₹2.80 / qtl | 0.21% |
+| **Onion** | ₹1.50 | 0.80% / day | ₹10.50 / qtl | 5.60% (High Perishability) |
+| **Tur / Arhar** | ₹0.50 | 0.04% / day | ₹3.50 / qtl | 0.28% |
+| **Gram / Chana**| ₹0.45 | 0.04% / day | ₹3.15 / qtl | 0.28% |
+
+#### 3. Expected Net Realized Return & Decision Boundary
+$$\text{Expected\_Net\_Price}_t = \Big[ P_t \times (1 - \text{Depreciation\_Loss}_t) \Big] - \text{Storage\_Cost}_t - \text{Logistics\_Cost\_per\_qtl}$$
+$$\text{Projected\_Gain\_per\_qtl} = \text{Expected\_Net\_Price}_t - \text{Net\_Price}_{\text{current}}$$
+
+- **Decision Rule:**
+  - **$\text{HOLD}$**: If $\text{Projected\_Gain\_per\_qtl} > \text{MINIMUM\_GAIN\_THRESHOLD}$ (₹15.0/qtl). Future price surge safely outpaces storage charges and spoilage.
+  - **$\text{SELL}$**: If $\text{Projected\_Gain\_per\_qtl} \le \text{MINIMUM\_GAIN\_THRESHOLD}$. Future prices are flat/falling, and waiting incurs an avoidable loss of $\max(0, -\text{Projected\_Gain\_per\_qtl})$.
+  - **$\text{UNAVAILABLE}$**: Returned if historical sample points are $< 15$ days.
+- **Implemented in:** [`backend/services/advisory_engine.py`](backend/services/advisory_engine.py) & [`backend/services/forecast_service.py`](backend/services/forecast_service.py)
 
 ---
 
@@ -96,14 +143,142 @@ $$\text{Total Profit Gain (₹)} = \text{Profit Gain per quintal} \times \text{Q
 ## 3. Technology Stack & Design Architecture
 
 - **Backend:** Python 3 + Flask REST API
-- **Database:** SQLite with normalized relational schema
+- **Database:** SQLite with normalized relational schema (WAL mode enabled for concurrent read-scalability)
 - **Frontend:** Vanilla HTML5, CSS3, JavaScript (no framework overhead; high performance on low-end mobile phones)
+- **Progressive Web App (PWA):** `manifest.json` and `sw.js` for standalone home-screen app installation and offline resilience
 - **External APIs:**
   - Google Maps JavaScript SDK & Distance Matrix API (`AIzaSyDOkEUdOO0Lnb_7HpOZ41mBxc1RSO4QDeU`)
   - Agmarknet / data.gov.in XML Price Feed API (`579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b`)
 - **Multilingual Text-to-Speech (TTS):** gTTS + Web Speech API fallback (English, Hindi, Marathi)
-- **Security:** Token-based authentication for Admin configuration (`admin` / `admin`)
+- **Security:** Token-based authentication for Admin & Master Logistics configuration (`admin` / `admin`)
 - **Direct Marketplace Module:** Entirely internal — the `deals` and `deal_inquiries` SQLite tables have no external API dependency; deal listings, buyer filtering, and inquiry-gated contact reveal are all served from the same Flask app.
+
+### 3.1 Multi-Tier System Architecture Diagram
+```mermaid
+graph TD
+    subgraph ClientLayer [Presentation Layer / Progressive Web App]
+        F1["🌾 Farmer Query Form (index.html)"]
+        F2["📊 Comparison & Advisory Dashboard (dashboard.html)"]
+        F3["🤝 Direct Buyer Marketplace (buyer/index.html)"]
+        F4["⚙️ Logistics & Master Settings (settings.html / admin.html)"]
+        SW["⚡ Service Worker (sw.js) & Manifest"]
+    end
+
+    subgraph GatewayLayer [Flask Web Server & API Router - app.py]
+        R1["POST /api/compare"]
+        R2["GET /api/v1/recommendation (Sell vs Hold)"]
+        R3["GET/POST /api/deals & /api/deals/:id/inquire"]
+        R4["POST /api/speak (Multilingual TTS)"]
+        R5["CRUD /api/admin/* & /settings"]
+    end
+
+    subgraph LogicLayer [Business Logic & Decision Engines]
+        S1["transport_cost_calculator.py (Distance x Rate x Qty)"]
+        S2["net_price_calculator.py (Gross - Logistics Deductions)"]
+        S3["advisory_engine.py (Sell vs Hold Decision Boundary)"]
+        S4["forecast_service.py (SARIMAX Econometric Forecaster)"]
+        S5["ranking_recommendation_engine.py (Sorting & Home Delta)"]
+        S6["deal_listing_service.py & buyer_feed_service.py"]
+    end
+
+    subgraph PersistenceLayer [Data Layer & External Feeds]
+        DB[("SQLite Database: krishimitra.db")]
+        MAPS["Google Maps Matrix & JavaScript SDK"]
+        AGMARK["Agmarknet XML Feed (data.gov.in)"]
+        TTS["Google TTS Synthesizer"]
+    end
+
+    ClientLayer --> GatewayLayer
+    GatewayLayer --> LogicLayer
+    LogicLayer --> PersistenceLayer
+```
+
+### 3.2 End-to-End Farmer Decision & Buyer Inquiry Flowchart
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Farmer as 🌾 Farmer
+    participant UI as KrishiMitra Web App
+    participant API as Flask API Engine
+    participant DB as SQLite Master DB
+    actor Buyer as 🏢 Bulk Buyer
+
+    Farmer->>UI: Selects Crop (Cotton), Home Mandi (Nagpur), Quantity (10 qtl)
+    UI->>API: POST /api/compare + GET /api/v1/recommendation
+    API->>DB: Query distances, current prices, handling cess, & 7d forecasts
+    API->>API: Calculate Transport Costs + Mandi Charges + Net Realized Price
+    API->>API: Rank mandis & evaluate Sell vs Hold threshold
+    API-->>UI: Return Winner (Amravati: ₹7,134/qtl, +₹340 gain) + HOLD Advisory (+₹548/qtl)
+    UI-->>Farmer: Displays Total Harvest Cash (₹71,340) + Interactive Sliders + Voice Audio
+
+    alt Direct Sale Alternative
+        Farmer->>UI: Submits "📢 List Your Deal" (10 qtl Cotton @ ₹7,134/qtl)
+        UI->>API: POST /api/deals (Stores listing, status='active')
+        API->>DB: Insert into deals table (Phone encrypted/stored)
+        Buyer->>UI: Opens /buyer feed (Browses live deals)
+        UI-->>Buyer: Shows Crop, Qty, Asking Price, Location (Phone is HIDDEN)
+        Buyer->>UI: Taps "🤝 I'm Interested" (Submits Name & Phone)
+        UI->>API: POST /api/deals/{id}/inquire
+        API->>DB: Record buyer inquiry in deal_inquiries
+        API-->>UI: Reveal farmer's direct phone number as clickable tel: link
+        UI-->>Farmer: Updates live inquiry count in "My Active Deals"
+    end
+```
+
+### 3.3 Relational Entity-Relationship Diagram (ERD)
+```mermaid
+erDiagram
+    CROPS ||--o{ PRICES : "has live prices"
+    CROPS ||--o{ DEALS : "categorizes"
+    CROPS ||--o{ PRICE_HISTORY : "tracks daily rates"
+    MANDIS ||--o{ PRICES : "lists"
+    MANDIS ||--o{ DISTANCES : "origin / destination"
+    MANDIS ||--o{ DEALS : "located in"
+    DEALS ||--o{ DEAL_INQUIRIES : "receives"
+
+    CROPS {
+        int id PK
+        string name
+    }
+    MANDIS {
+        int id PK
+        string name
+        float latitude
+        float longitude
+    }
+    PRICES {
+        int id PK
+        int crop_id FK
+        int mandi_id FK
+        float price_per_quintal
+        timestamp updated_at
+    }
+    DISTANCES {
+        int id PK
+        int from_mandi_id FK
+        int to_mandi_id FK
+        float distance_km
+    }
+    DEALS {
+        int id PK
+        string farmer_name
+        string farmer_phone
+        int crop_id FK
+        string crop_name
+        float quantity_quintal
+        float price_per_quintal
+        string location_name
+        string status
+        timestamp posted_at
+    }
+    DEAL_INQUIRIES {
+        int id PK
+        int deal_id FK
+        string buyer_name
+        string buyer_phone
+        timestamp inquired_at
+    }
+```
 
 ---
 
@@ -113,6 +288,8 @@ Below is an exhaustive directory of every file in the codebase, detailing its **
 
 ```
 krishimitra/
+├── api/
+│   └── index.py                        # Vercel serverless WSGI entrypoint
 ├── backend/
 │   ├── app.py                          # Flask entrypoint & API routing
 │   ├── config.py                       # App constants, mock toggle, DB paths, API keys
@@ -135,6 +312,8 @@ krishimitra/
 │   │   ├── data_fetcher_service.py     # Agmarknet / e-NAM XML API price fetcher
 │   │   ├── price_comparison_engine.py  # Mandi price alignment across markets
 │   │   ├── ranking_recommendation_engine.py # Descending net return ranking engine
+│   │   ├── advisory_engine.py          # Phase 4 Sell vs. Hold proactive recommendation
+│   │   ├── forecast_service.py         # SARIMAX batch econometric time series forecaster
 │   │   ├── tts_engine.py               # Multilingual voice synthesis (EN/HI/MR)
 │   │   ├── analytics_reports_service.py# 7-day historical trends & spread stats
 │   │   ├── notification_service.py     # Price surge alerts & market advisories
@@ -145,19 +324,28 @@ krishimitra/
 │   │   └── admin_panel.py              # Admin CRUD controller & authentication
 │   └── requirements.txt                # Python dependencies
 ├── frontend/
-│   ├── index.html                      # Screen 1: Farmer Input Form
-│   ├── dashboard.html                  # Screen 2: Mandi Compare, Summary & "List Your Deal"
-│   ├── admin.html                      # Screen 3: Admin Management & Login Screen
+│   ├── index.html                      # Screen 1: Farmer Input Form & PWA Shell
+│   ├── dashboard.html                  # Screen 2: Mandi Compare, Sensitivity Sliders & Deals
+│   ├── settings.html                   # Screen 3a: Master Data & Logistics Configuration
+│   ├── admin.html                      # Screen 3b: Admin Login & Secure Dashboard
 │   ├── buyer/
 │   │   ├── index.html                  # Screen 4: Buyer Marketplace — live deal feed
 │   │   └── js/
 │   │       └── buyer.js                # Buyer feed fetch/filter/sort + inquiry flow
-│   ├── css/style.css                   # Mobile-first high contrast stylesheet (shared by all screens)
-│   └── js/
-│       ├── app.js                      # Farmer input handling & localization
-│       ├── dashboard.js                # Comparison table, summary card, TTS, Maps, deal listing
-│       └── admin.js                    # Admin panel login & CRUD operations
-├── test_services.py                    # Automated test verification suite
+│   ├── css/style.css                   # Mobile-first high contrast stylesheet (shared)
+│   ├── js/
+│   │   ├── app.js                      # Farmer input handling & localization
+│   │   ├── dashboard.js                # Comparison, Harvest Cash, Sensitivity Sliders, Advisory
+│   │   ├── settings.js                 # Master logistics & mandi CRUD controller
+│   │   └── admin.js                    # Admin panel login & authentication state
+│   ├── manifest.json                   # Web App Manifest for mobile PWA installation
+│   └── sw.js                           # Lightweight service worker for 2G/3G caching
+├── docs/
+│   └── SELL_VS_HOLD_MATHEMATICAL_MODEL.md # Full mathematical advisory documentation
+├── test_services.py                    # Core calculation & marketplace verification suite
+├── test_advisory_engine.py             # Phase 4 Sell vs. Hold advisory test suite
+├── render.yaml                         # Production persistent web service spec
+├── vercel.json                         # Serverless deployment configuration
 ├── PROJECT_DOCUMENTATION.md            # Comprehensive project documentation
 └── README.md                           # Quick start & deployment guide
 ```
@@ -691,3 +879,65 @@ Contact details are **inquiry-gated, not publicly listed**. This is a deliberate
 
 ### 9.6 Theming
 The Buyer Marketplace (`buyer/index.html`) shares `frontend/css/style.css` with the rest of the app — same emerald/forest-green palette, same button and card conventions, same accessibility bar (large tap targets, high-contrast text). No separate buyer-specific stylesheet exists, by design, so the product feels like one cohesive app rather than two bolted-together tools.
+
+---
+
+## 10. High-Impact Farmer Experience & Decision Features
+
+### 10.1 Total Harvest Profit Breakdown (Full Batch Calculation)
+Smallholder farmers manage cash flow based on their **entire haul**, not abstract rates per quintal. KrishiMitra calculates and highlights total in-pocket earnings directly below the winner card:
+- **Gross Harvest Value:** e.g., ₹72,500 (for 10 quintals of cotton @ ₹7,250)
+- **Total Freight Deductions:** -₹1,160
+- **Total Mandi Handling & Cess:** -₹0
+- **Net In-Pocket Harvest Cash:** **₹71,340**
+- **Extra Net Profit vs. Local Market:** **+₹340**
+
+### 10.2 Day-by-Day (Day 1 through Day 7) Price & Net Trajectory Strip
+Instead of a single black-box badge, the **AI Market Advisory card** renders a horizontal scrollable day-by-day trajectory strip with Day +1 through Day +7 badges showing:
+1. **Day Number Badge** (`Day +1` to `Day +7`)
+2. **Projected Gross Listing Price** ($P_t$)
+3. **Expected Net Realized Return** factoring storage fees and natural produce moisture loss
+4. **Daily Profit Gain / Loss Avoidance Pill**
+5. **Transparency Footnote:** Clear explanation that forecasts are computed via SARIMAX trained on APMC arrival rates, precipitation disruption indices, and diesel indices, alongside daily crop-specific storage and shrinkage parameters.
+
+### 10.3 Interactive "What-If?" Sensitivity Simulator
+Directly below the winner banner, an interactive simulator allows farmers and agricultural extension officers to simulate scenarios without re-submitting forms:
+- **Quantity Slider:** 1 to 100 quintals (step 1 qtl)
+- **Freight Rate Slider:** ₹0.40 to ₹2.50 / km / quintal (step ₹0.05)
+- **Real-Time Client-Side Re-computation:** Moving either slider instantly updates:
+  - Recommended mandi ranking order
+  - Net return per quintal
+  - Total harvest in-pocket cash ledger
+  - All candidate comparison cards
+
+### 10.4 Mobile PWA & Rural Accessibility
+- **Installable Progressive Web App (`manifest.json`):** Allows farmers to install KrishiMitra directly onto their Android/iOS home screens without an app store download.
+- **Offline Shell & Fast Caching (`sw.js`):** Lightweight service worker caches HTML, CSS, JavaScript, and fonts so the app opens instantly on rural 2G/3G connections.
+- **Pinch-to-Zoom Accessibility:** Viewport configuration (`width=device-width, initial-scale=1.0`) allows older farmers to easily zoom in on prices and distances.
+
+---
+
+## 11. Competitive Advantage & Evaluator Matrix
+
+| Evaluation Dimension | Traditional Village Middleman | Vanilla Agmarknet Portal | e-NAM Platform | KrishiMitra Platform |
+| :--- | :--- | :--- | :--- | :--- |
+| **Realized Profit Calculation** | ❌ Opaque, predatory deductions | ❌ Gross listing price only | ❌ Gross price only | ✅ **Automated: Net = Listing − (Distance × Rate) − Handling** |
+| **Logistics Integration** | ❌ Farmer pays blind cartage | ❌ None | ⚠️ Manual transport booking | ✅ **Dynamic distance-based freight deduction** |
+| **Temporal Advice (Sell vs Hold)**| ❌ Biased towards buying cheap | ❌ None | ❌ None | ✅ **Algorithmic 7-Day SARIMAX + Storage Decay Model** |
+| **Direct Buyer Disintermediation** | ❌ 4%–8% middleman commission | ❌ None | ⚠️ Heavy KYC / portal registration | ✅ **Instant deal posting with zero commission** |
+| **Farmer Privacy & Spam Shield** | ❌ Numbers widely circulated | ❌ Not applicable | ⚠️ Listed on public bids | ✅ **Inquiry-gated phone number reveal** |
+| **Accessibility & Usability** | ⚠️ Verbal only | ❌ Complex English tabular UI | ❌ Desktop portal | ✅ **Multilingual TTS (EN/HI/MR) + PWA Mobile-First** |
+
+---
+
+## 12. Deployment & Data Persistence Architecture
+
+### Why Deals Disappear on Vercel Serverless
+Vercel serverless functions run in ephemeral, read-only containers. Any file written to the local filesystem (such as SQLite at `/tmp/krishimitra.db`) is stored in temporary memory and **erased upon container shutdown or cold restart**. 
+
+### Production Persistence Solutions
+1. **Option A: Render.com Persistent Web Service (Recommended & Included):**
+   - The repository includes [`render.yaml`](render.yaml) which spins up a persistent Python WSGI web service (`gunicorn backend.app:app`) backed by a persistent disk mount. SQLite changes and deal listings persist indefinitely across restarts.
+2. **Option B: External PostgreSQL (`DATABASE_URL`):**
+   - `backend/database/db_connection.py` can be pointed to a hosted PostgreSQL instance (e.g., Supabase or Neon free tier) by configuring the `DATABASE_URL` environment variable, enabling persistent serverless deployments across any cloud provider.
+

@@ -1,0 +1,17 @@
+{
+  "name": "KrishiMitra - Farmer Market Estimator",
+  "short_name": "KrishiMitra",
+  "description": "Smart APMC mandi price discovery, logistics deductions, Sell vs. Hold advisory, and direct farmer-buyer marketplace.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#166534",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌾</text></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

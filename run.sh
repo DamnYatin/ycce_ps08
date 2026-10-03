@@ -1,3 +1,6 @@
+
+
+
 #!/usr/bin/env bash
 # ==============================================================================
 # KrishiMitra - Sell vs. Hold AI Advisory & Mandi Estimator
@@ -40,21 +43,36 @@ source .venv/bin/activate
 echo "📦 [2/3] Verifying and installing dependencies from requirements.txt..."
 pip install -r requirements.txt --quiet
 
-# 4. Launch Default Web Browser (if desktop environment / xdg-open is available)
-if command -v xdg-open &>/dev/null; then
-    (sleep 2 && xdg-open "http://127.0.0.1:5000" >/dev/null 2>&1 || true) &
+# Detect available port (defaults to 5000, falls back to 5001 if macOS AirPlay/another service occupies 5000)
+SERVER_PORT=${PORT:-5000}
+if command -v lsof &>/dev/null; then
+    if lsof -i :"$SERVER_PORT" &>/dev/null; then
+        echo "ℹ️  Port $SERVER_PORT is currently in use (e.g., macOS AirPlay Receiver). Switching to 5001..."
+        SERVER_PORT=5001
+    fi
+fi
+export PORT="$SERVER_PORT"
+
+# 4. Launch Default Web Browser (macOS 'open' or Linux 'xdg-open')
+if command -v open &>/dev/null; then
+    (sleep 2 && open "http://127.0.0.1:$SERVER_PORT" >/dev/null 2>&1 || true) &
+elif command -v xdg-open &>/dev/null; then
+    (sleep 2 && xdg-open "http://127.0.0.1:$SERVER_PORT" >/dev/null 2>&1 || true) &
 fi
 
 # 5. Start KrishiMitra Server
-echo "🚀 [3/3] Starting KrishiMitra Server..."
+echo "🚀 [3/3] Starting KrishiMitra Server on port $SERVER_PORT..."
 echo ""
 echo "=============================================================================="
-echo "  🌾 Farmer Estimator:    http://127.0.0.1:5000/"
-echo "  📊 Mandi Compare:       http://127.0.0.1:5000/dashboard"
-echo "  🛒 Buyer Marketplace:   http://127.0.0.1:5000/buyer"
-echo "  ⚙️ System Settings:     http://127.0.0.1:5000/settings"
+echo "  🌾 Farmer Estimator:    http://127.0.0.1:$SERVER_PORT/"
+echo "  📊 Mandi Compare:       http://127.0.0.1:$SERVER_PORT/dashboard"
+echo "  🏪 Marketplace Hub:     http://127.0.0.1:$SERVER_PORT/marketplace"
+echo "  👨‍🌾 Seller Dashboard:    http://127.0.0.1:$SERVER_PORT/marketplace/seller"
+echo "  🛒 Buyer Marketplace:   http://127.0.0.1:$SERVER_PORT/marketplace/buyer"
+echo "  ⚙️ System Settings:     http://127.0.0.1:$SERVER_PORT/settings"
 echo "=============================================================================="
 echo "Press Ctrl+C anytime to stop the server."
 echo ""
 
 python backend/app.py
+

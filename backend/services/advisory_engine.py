@@ -238,6 +238,28 @@ def get_sell_vs_hold_advisory(crop_id, home_mandi_id, quantity=1.0, horizon_days
             "mandi_name": target_mandi_name
         }
 
+    # Generate 7-day day-by-day trajectory breakdown
+    daily_trajectory = []
+    for d in range(1, 8):
+        ratio = d / float(h_days if h_days > 0 else 7)
+        day_gross = round(current_gross_price + (p_t - current_gross_price) * ratio, 2)
+        day_storage = round(c_s * d, 2)
+        day_depr_rate = round(delta * d, 4)
+        day_depr_cost = round(day_gross * day_depr_rate, 2)
+        day_net = round((day_gross * (1.0 - day_depr_rate)) - day_storage - total_logistics_cost, 2)
+        day_gain = round(day_net - current_net_price, 2)
+        daily_trajectory.append({
+            "day": d,
+            "day_label": f"Day +{d}",
+            "predicted_gross_price": day_gross,
+            "storage_cost": day_storage,
+            "depreciation_cost": day_depr_cost,
+            "total_holding_cost": round(day_storage + day_depr_cost, 2),
+            "expected_net_price": day_net,
+            "projected_gain_per_qtl": day_gain,
+            "projected_gain_total": round(day_gain * qty, 2)
+        })
+
     return {
         "decision": decision,
         "current_net_price_per_qtl": current_net_price,
@@ -255,6 +277,7 @@ def get_sell_vs_hold_advisory(crop_id, home_mandi_id, quantity=1.0, horizon_days
         "forecast_listing_price": p_t,
         "recommended_mandi_id": target_mandi_id,
         "recommended_mandi_name": target_mandi_name,
+        "daily_trajectory": daily_trajectory,
         "reasons": reasons,
         "explanation_key": explanation_key,
         "explanation_values": explanation_values

@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KrishiMitra - Buyer Marketplace</title>
+  <meta name="theme-color" content="#166534">
+  <link rel="manifest" href="/manifest.json">
   <meta name="description" content="Direct procurement marketplace connecting bulk buyers with verified farmers with zero middleman fees.">
 
   <!-- Google Fonts: Poppins -->
@@ -83,9 +85,10 @@
         </div>
       </a>
 
-      <div style="display: flex; gap: 0.5rem; align-items: center;">
-        <a href="/" class="btn btn-outline" style="min-height: 34px; padding: 0.25rem 0.75rem; font-size: 0.82rem; background: rgba(255,255,255,0.2); color: #ffffff; border: 1px solid rgba(255,255,255,0.4); width: auto;" data-i18n="farmerView">
-          🌾 Farmer View
+      <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+        <!-- Switch Role Link -->
+        <a href="/marketplace" class="role-switch-badge" style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 700; color: #ffffff; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); padding: 4px 12px; border-radius: var(--radius-full); text-decoration: none;" title="Switch Marketplace Role">
+          🔄 <span data-i18n="switchRoleText">Switch Role</span>
         </a>
 
         <!-- Multilingual Language Toggle -->
@@ -95,6 +98,13 @@
           <button class="lang-btn" data-lang="mr">मराठी</button>
         </div>
 
+        <!-- Marketplace Nav Item (Active) -->
+        <a href="/marketplace" class="nav-marketplace-btn active" aria-label="Marketplace" aria-current="page">
+          <span class="nav-icon">🏪</span>
+          <span class="nav-marketplace-label" data-i18n="marketplaceNav">Marketplace</span>
+        </a>
+
+        <!-- Settings Icon Link -->
         <a href="/settings" class="nav-settings-btn" title="Settings" aria-label="Settings">
           ⚙️
         </a>
@@ -168,6 +178,19 @@
       <!-- Dynamically filled by buyer.js -->
     </div>
 
+    <!-- Bottom Navigation Footer -->
+    <div style="text-align: center; margin-top: 2rem; margin-bottom: 2rem; display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+      <a href="/" class="btn btn-secondary" style="width: auto; padding: 0.6rem 1.25rem; display: inline-flex;" data-i18n="backToEstimator">
+        ⬅️ Mandi Price Estimator
+      </a>
+      <a href="/marketplace" class="btn btn-outline" style="width: auto; padding: 0.6rem 1.25rem; display: inline-flex; border-color: var(--primary); color: var(--primary-dark);" data-i18n="switchRoleBottom">
+        🔄 Switch Role (Seller / Buyer)
+      </a>
+      <a href="/marketplace/seller" class="btn btn-primary" style="width: auto; padding: 0.6rem 1.25rem; display: inline-flex;" data-i18n="sellerDashboardBottom">
+        👨‍🌾 List Harvest as Seller
+      </a>
+    </div>
+
   </main>
 
   <!-- Inquiry Modal Dialog -->
@@ -189,12 +212,12 @@
 
         <div class="form-group">
           <label class="form-label" style="font-size: 0.85rem;">🏢 Your Business / Trader Name</label>
-          <input type="text" id="buyerNameInput" class="form-input" placeholder="e.g. Maharashtra Agro Traders" required value="Maharashtra Agro Traders">
+          <input type="text" id="buyerNameInput" class="form-input" placeholder="e.g. Maharashtra Agro Traders" required>
         </div>
 
         <div class="form-group">
           <label class="form-label" style="font-size: 0.85rem;">📞 Your Phone Number</label>
-          <input type="tel" id="buyerPhoneInput" class="form-input" placeholder="10-digit mobile number" required value="9890112233" pattern="[0-9]{10}">
+          <input type="tel" id="buyerPhoneInput" class="form-input" placeholder="10-digit mobile number" required pattern="[0-9]{10}">
         </div>
 
         <button type="submit" class="btn btn-primary" id="confirmInquiryBtn" style="font-size: 0.95rem; margin-top: 0.5rem;">

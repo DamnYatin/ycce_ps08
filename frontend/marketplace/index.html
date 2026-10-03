@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KrishiMitra - Marketplace Hub</title>
+  <meta name="description"
+    content="Choose whether you want to list your crop as a seller or procure harvest directly as a buyer.">
+  <meta name="theme-color" content="#166534">
+  <link rel="manifest" href="/manifest.json">
+
+  <!-- Google Fonts: Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <a href="/" class="brand-wrapper">
+        <span class="brand-icon">🌾</span>
+        <div>
+          <h1 class="brand-title" data-i18n="appTitle">KrishiMitra</h1>
+          <p class="brand-subtitle" data-i18n="appSubtitle">Direct Agriculture Marketplace</p>
+        </div>
+      </a>
+
+      <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <!-- Multilingual Language Toggle -->
+        <div class="lang-selector" role="group" aria-label="Language Selector">
+          <button class="lang-btn active" data-lang="en">EN</button>
+          <button class="lang-btn" data-lang="hi">हिन्दी</button>
+          <button class="lang-btn" data-lang="mr">मराठी</button>
+        </div>
+
+        <!-- Marketplace Nav Item (Active) -->
+        <a href="/marketplace" class="nav-marketplace-btn active" aria-label="Marketplace" aria-current="page">
+          <span class="nav-icon">🏪</span>
+          <span class="nav-marketplace-label" data-i18n="marketplaceNav">Marketplace</span>
+        </a>
+
+        <!-- Settings Icon Link -->
+        <a href="/settings" class="nav-settings-btn" title="Settings" aria-label="Settings">
+          ⚙️
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="main-content" style="max-width: 820px; padding: 2rem 1rem;">
+
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <span
+        style="display: inline-block; font-size: 0.82rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; background: #dcfce7; color: #166534; padding: 4px 14px; border-radius: var(--radius-full); margin-bottom: 0.75rem;"
+        data-i18n="hubBadge">
+        🤝 Direct-Sale Marketplace
+      </span>
+      <h2
+        style="font-size: clamp(1.6rem, 5vw, 2.2rem); font-weight: 900; color: var(--primary-dark); margin-bottom: 0.5rem;"
+        data-i18n="choiceHeading">
+        Are you a Seller or a Buyer?
+      </h2>
+      <p style="font-size: 1rem; color: var(--text-muted); max-width: 580px; margin: 0 auto;"
+        data-i18n="choiceSubheading">
+        Connect directly with zero middleman commissions. Select your role to continue to your dedicated dashboard.
+      </p>
+    </div>
+
+    <!-- Role Choice Cards -->
+    <div class="role-choice-grid">
+
+      <!-- Seller Choice Card -->
+      <a href="/marketplace/seller" class="role-choice-card seller-card" id="sellerChoiceCard"
+        aria-label="Seller: Manage direct-sale listings">
+        <div>
+          <div class="role-card-icon">👨‍🌾</div>
+          <h3 class="role-card-title" data-i18n="sellerTitle">I am a Seller (Farmer)</h3>
+          <p class="role-card-desc" data-i18n="sellerDesc">
+            List your harvest directly to verified buyers across Maharashtra. Set your asking price, track inquiries,
+            and mark deals as sold.
+          </p>
+        </div>
+        <div>
+          <span class="role-card-btn" style="width: 100%;">
+            <span data-i18n="sellerAction">Post & Manage Listings</span> ➔
+          </span>
+        </div>
+      </a>
+
+      <!-- Buyer Choice Card -->
+      <a href="/marketplace/buyer" class="role-choice-card buyer-card" id="buyerChoiceCard"
+        aria-label="Buyer: Browse and inquire about listings">
+        <div>
+          <div class="role-card-icon">🏢</div>
+          <h3 class="role-card-title" data-i18n="buyerTitle">I am a Buyer (Trader / Mill)</h3>
+          <p class="role-card-desc" data-i18n="buyerDesc">
+            Browse verified crop lots directly from farmers. Filter by commodity and location, view transparent pricing,
+            and connect directly.
+          </p>
+        </div>
+        <div>
+          <span class="role-card-btn" style="width: 100%;">
+            <span data-i18n="buyerAction">Browse Crop Feed</span> ➔
+          </span>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- Back to Main Crop Price Tool Link -->
+    <div style="text-align: center; margin-top: 2rem;">
+      <a href="/" class="btn btn-outline"
+        style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.65rem 1.5rem; font-size: 0.95rem; font-weight: 700; width: auto; color: var(--primary-dark); border-color: var(--primary);">
+        <span>🌾</span>
+        <span data-i18n="backToEstimator">Back to Mandi Price Estimator</span>
+      </a>
+    </div>
+
+  </main>
+
+  <!-- Localization Script -->
+  <script>
+    const marketplaceChoiceI18n = {
+      en: {
+        appTitle: "KrishiMitra",
+        appSubtitle: "Direct Agriculture Marketplace",
+        marketplaceNav: "Marketplace",
+        hubBadge: "🤝 Direct-Sale Marketplace",
+        choiceHeading: "Are you a Seller or a Buyer?",
+        choiceSubheading: "Connect directly with zero middleman commissions. Select your role to continue to your dedicated dashboard.",
+        sellerTitle: "I am a Seller (Farmer)",
+        sellerDesc: "List your harvest directly to verified buyers across Maharashtra. Set your asking price, track inquiries, and mark deals as sold.",
+        sellerAction: "Post & Manage Listings",
+        buyerTitle: "I am a Buyer (Trader / Mill)",
+        buyerDesc: "Browse verified crop lots directly from farmers. Filter by commodity and location, view transparent pricing, and connect directly.",
+        buyerAction: "Browse Crop Feed",
+        backToEstimator: "Back to Mandi Price Estimator"
+      },
+      hi: {
+        appTitle: "कृषिमित्र",
+        appSubtitle: "सीधा कृषि बाजार",
+        marketplaceNav: "मार्केटप्लेस",
+        hubBadge: "🤝 सीधा-बिक्री बाजार",
+        choiceHeading: "क्या आप विक्रेता हैं या खरीदार?",
+        choiceSubheading: "बिना किसी बिचौलिए के सीधे जुड़ें। अपने समर्पित डैशबोर्ड पर जाने के लिए अपनी भूमिका चुनें।",
+        sellerTitle: "मैं विक्रेता हूँ (किसान)",
+        sellerDesc: "महाराष्ट्र भर के सत्यापित खरीदारों के लिए अपनी उपज सूचीबद्ध करें। अपना भाव तय करें, पूछताछ देखें और सौदे पूरे करें।",
+        sellerAction: "उपज सूचीबद्ध करें एवं प्रबंधित करें",
+        buyerTitle: "मैं खरीदार हूँ (व्यापारी / मिल)",
+        buyerDesc: "किसानों से सीधे उपलब्ध फसलों के लॉट देखें। फसल और स्थान के अनुसार फ़िल्टर करें और सीधे संपर्क करें।",
+        buyerAction: "उपज सूची देखें",
+        backToEstimator: "मंडी भाव कैलकुलेटर पर वापस जाएं"
+      },
+      mr: {
+        appTitle: "कृषि मित्र",
+        appSubtitle: "थेट शेती बाजारपेठ",
+        marketplaceNav: "मार्केटप्लेस",
+        hubBadge: "🤝 थेट विक्री बाजारपेठ",
+        choiceHeading: "तुम्ही विक्रेता आहात की खरेदीदार?",
+        choiceSubheading: "कोणत्याही मध्यस्थाशिवाय थेट व्यवहार करा. तुमच्या डॅशबोर्डवर जाण्यासाठी आपली भूमिका निवडा.",
+        sellerTitle: "मी विक्रेता आहे (शेतकरी)",
+        sellerDesc: "तुमचे पीक थेट महाराष्ट्रातील पडताळणी केलेल्या खरेदीदारांसाठी सूचीबद्ध करा. स्वतःचा भाव ठरवा आणि चौकशी तपासा.",
+        sellerAction: "माल नोंदवा व व्यवस्थापित करा",
+        buyerTitle: "मी खरेदीदार आहे (व्यापारी / मिल)",
+        buyerDesc: "शेतकऱ्यांकडील थेट उपलब्ध शेतमाल पहा. पीक व जिल्ह्यानुसार फिल्टर करा आणि थेट संपर्क साधा.",
+        buyerAction: "शेतमाल यादी पहा",
+        backToEstimator: "बाजारभाव गणकाकडे परत जा"
+      }
+    };
+
+    let currentLang = localStorage.getItem("krishimitra_lang") || "en";
+
+    function setLanguage(lang) {
+      if (!marketplaceChoiceI18n[lang]) lang = "en";
+      currentLang = lang;
+      localStorage.setItem("krishimitra_lang", lang);
+
+      const dict = marketplaceChoiceI18n[lang];
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.dataset.i18n;
+        if (dict[key]) el.textContent = dict[key];
+      });
+
+      document.querySelectorAll(".lang-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.lang === lang);
+      });
+    }
+
+    document.querySelectorAll(".lang-btn").forEach(btn => {
+      btn.addEventListener("click", () => setLanguage(btn.dataset.lang));
+    });
+
+    // Save selection preference without auto-skipping
+    document.getElementById("sellerChoiceCard")?.addEventListener("click", () => {
+      localStorage.setItem("krishimitra_marketplace_role", "seller");
+    });
+    document.getElementById("buyerChoiceCard")?.addEventListener("click", () => {
+      localStorage.setItem("krishimitra_marketplace_role", "buyer");
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      setLanguage(currentLang);
+    });
+  </script>
+</body>
+
+</html>

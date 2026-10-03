@@ -62,7 +62,15 @@ const buyerTranslations = {
     toastEnterDetails: "⚠️ Please enter your name and phone number.",
     toastUnlocked: "🎉 Farmer contact unlocked! You may now call directly.",
     toastFeedRefreshed: "⚡ Deals feed refreshed",
-    toastError: "⚠️ Could not refresh marketplace feed."
+    toastError: "⚠️ Could not refresh marketplace feed.",
+    marketplaceNav: "Marketplace",
+    switchRoleText: "Switch Role",
+    clearFiltersBtn: "Clear Filters",
+    backToEstimator: "⬅️ Mandi Price Estimator",
+    switchRoleBottom: "🔄 Switch Role (Seller / Buyer)",
+    sellerDashboardBottom: "👨‍🌾 List Harvest as Seller",
+    retryBtn: "Retry",
+    loadError: "Failed to load marketplace deals. Please check your connection."
   },
   hi: {
     buyerTitle: "कृषिमित्र खरीदार बाजार",
@@ -107,7 +115,15 @@ const buyerTranslations = {
     toastEnterDetails: "⚠️ कृपया अपना नाम और फ़ोन नंबर दर्ज करें।",
     toastUnlocked: "🎉 किसान का संपर्क अनलॉक हो गया! अब आप सीधे कॉल कर सकते हैं।",
     toastFeedRefreshed: "⚡ बाजार सौदे ताज़ा किए गए",
-    toastError: "⚠️ मार्केटप्लेस फ़ीड ताज़ा नहीं हो सका।"
+    toastError: "⚠️ मार्केटप्लेस फ़ीड ताज़ा नहीं हो सका।",
+    marketplaceNav: "मार्केटप्लेस",
+    switchRoleText: "भूमिका बदलें",
+    clearFiltersBtn: "फ़िल्टर हटाएं",
+    backToEstimator: "⬅️ मंडी भाव कैलकुलेटर",
+    switchRoleBottom: "🔄 भूमिका बदलें (विक्रेता / खरीदार)",
+    sellerDashboardBottom: "👨‍🌾 फसल सूचीबद्ध करें (विक्रेता)",
+    retryBtn: "पुनः प्रयास करें",
+    loadError: "मार्केटप्लेस सौदे लोड करने में विफल। कृपया कनेक्शन जांचें।"
   },
   mr: {
     buyerTitle: "कृषि मित्र खरेदीदार बाजार",
@@ -152,7 +168,15 @@ const buyerTranslations = {
     toastEnterDetails: "⚠️ कृपया आपले नाव आणि फोन नंबर प्रविष्ट करा.",
     toastUnlocked: "🎉 शेतकऱ्याचा संपर्क अनलॉक झाला! आता आपण थेट कॉल करू शकता.",
     toastFeedRefreshed: "⚡ सौदे ताजे केले",
-    toastError: "⚠️ मार्केटप्लेस फीड ताजे करण्यात अयशस्वी."
+    toastError: "⚠️ मार्केटप्लेस फीड ताजे करण्यात अयशस्वी.",
+    marketplaceNav: "मार्केटप्लेस",
+    switchRoleText: "भूमिका बदला",
+    clearFiltersBtn: "फिल्टर काढा",
+    backToEstimator: "⬅️ बाजारभाव गणक",
+    switchRoleBottom: "🔄 भूमिका बदला (विक्रेता / खरेदीदार)",
+    sellerDashboardBottom: "👨‍🌾 माल नोंदवा (विक्रेता)",
+    retryBtn: "पुन्हा प्रयत्न करा",
+    loadError: "बाजारपेठ सौदे लोड करण्यात अडचण आली. कृपया कनेक्शन तपासा."
   }
 };
 
@@ -235,8 +259,30 @@ async function fetchBuyerDeals() {
   } catch (err) {
     console.error("Buyer feed fetch error:", err);
     showToast(bt("toastError"));
+    const container = document.getElementById("buyerFeedContainer");
+    if (container && activeDeals.length === 0) {
+      container.innerHTML = `
+        <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 2rem 1rem; color: #b91c1c; background: #fef2f2;">
+          <p style="font-weight: 700; margin-bottom: 0.75rem;">${bt("loadError")}</p>
+          <button type="button" onclick="fetchBuyerDeals()" class="btn btn-outline" style="min-height: 34px; padding: 2px 14px; font-size: 0.82rem; width: auto; border-color: #dc2626; color: #b91c1c;">
+            ${bt("retryBtn")}
+          </button>
+        </div>
+      `;
+    }
   }
 }
+
+// Global Clear Filters Helper
+window.clearBuyerFilters = function() {
+  const cropSelect = document.getElementById("buyerCropFilter");
+  const locInput = document.getElementById("buyerLocationFilter");
+  const sortSelect = document.getElementById("buyerSortFilter");
+  if (cropSelect) cropSelect.value = "";
+  if (locInput) locInput.value = "";
+  if (sortSelect) sortSelect.value = "newest";
+  fetchBuyerDeals();
+};
 
 // ==========================================
 // 4. Render Deals Feed Cards
@@ -253,6 +299,9 @@ function renderDealsFeed(deals) {
         <p style="color: var(--text-muted); font-size: 0.88rem; max-width: 400px; margin: 0.5rem auto 1rem;">
           ${bt("noDealsDesc")}
         </p>
+        <button type="button" class="btn btn-outline" style="min-height: 38px; width: auto; margin: 0 auto; padding: 4px 18px; font-size: 0.85rem;" onclick="clearBuyerFilters()">
+          ❌ ${bt("clearFiltersBtn")}
+        </button>
       </div>
     `;
     return;

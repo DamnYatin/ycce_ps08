@@ -48,6 +48,7 @@ const dashboardTranslations = {
     dataUnavailable: "Data Unavailable",
     noMarketRate: "No Live Rate",
     quantitySuffix: "Quintals",
+    marketplaceNav: "Marketplace",
     
     // Phase 4: Proactive AI Sell vs. Hold Advisory
     advisoryCardTitle: "AI Market Advisory (7-Day Forecast)",
@@ -94,6 +95,7 @@ const dashboardTranslations = {
     dataUnavailable: "डेटा अनुपलब्ध",
     noMarketRate: "लाइव भाव उपलब्ध नहीं",
     quantitySuffix: "क्विंटल",
+    marketplaceNav: "मार्केटप्लेस",
 
     // Phase 4: Proactive AI Sell vs. Hold Advisory
     advisoryCardTitle: "एआई बाजार सलाह (7 दिवसीय पूर्वानुमान)",
@@ -140,6 +142,7 @@ const dashboardTranslations = {
     dataUnavailable: "माहिती उपलब्ध नाही",
     noMarketRate: "ताजे भाव उपलब्ध नाहीत",
     quantitySuffix: "क्विंटल",
+    marketplaceNav: "मार्केटप्लेस",
 
     // Phase 4: Proactive AI Sell vs. Hold Advisory
     advisoryCardTitle: "एआय बाजार सल्ला (७ दिवसांचा अंदाज)",
@@ -370,6 +373,31 @@ function renderAdvisoryUI(advisory) {
     if (metricsGrid) metricsGrid.style.display = "none";
     if (reasonsList) reasonsList.style.display = "none";
   }
+
+  // 5. Day-by-Day Trajectory Row (Day 1..7)
+  const trajectorySec = document.getElementById("advisoryTrajectorySection");
+  const trajectoryGrid = document.getElementById("dailyTrajectoryGrid");
+  if (trajectorySec && trajectoryGrid) {
+    if (advisory.daily_trajectory && advisory.daily_trajectory.length > 0) {
+      trajectorySec.style.display = "block";
+      trajectoryGrid.innerHTML = advisory.daily_trajectory.map(d => {
+        const isPositive = d.projected_gain_per_qtl >= 0;
+        const gainSign = isPositive ? `+₹${d.projected_gain_per_qtl}` : `-₹${Math.abs(d.projected_gain_per_qtl)}`;
+        const pillClass = isPositive ? "positive" : "negative";
+        return `
+          <div class="day-trajectory-card ${d.day === 7 ? 'is-peak' : ''}">
+            <div class="day-badge">${d.day_label || `Day +${d.day}`}</div>
+            <div class="day-price">₹${Math.round(d.predicted_gross_price).toLocaleString()}</div>
+            <div class="day-net">Net: ₹${Math.round(d.expected_net_price).toLocaleString()}</div>
+            <div class="day-net" style="font-size:0.7rem; color:#b91c1c;">Decay: -₹${d.total_holding_cost}</div>
+            <div class="day-gain-pill ${pillClass}">${gainSign}/qtl</div>
+          </div>
+        `;
+      }).join("");
+    } else {
+      trajectorySec.style.display = "none";
+    }
+  }
 }
 
 // ==========================================
@@ -502,6 +530,46 @@ function renderDashboardUI(data) {
     document.getElementById("summaryMandiName").textContent = winner ? formatName(winner.mandi_name, currentLang) : t.dataUnavailable;
   }
 
+  // 3b. Total Harvest Cash Card (Full Batch Calculation)
+  const qty = data.quantity_quintal || parseFloat(quantity) || 10;
+  const harvestCard = document.getElementById("totalHarvestCashCard");
+  if (harvestCard && winner && winner.net_price_per_qtl !== null) {
+    harvestCard.style.display = "block";
+    const harvestQtyLabel = document.getElementById("harvestQtyLabel");
+    if (harvestQtyLabel) harvestQtyLabel.textContent = `${qty} ${t.quantitySuffix || "Quintals"}`;
+
+    const grossTotal = Math.round((summary?.mandi_price_per_qtl || winner.mandi_price_per_qtl || 0) * qty);
+    const freightTotal = Math.round((summary?.transport_cost_per_qtl || winner.transport_cost_per_qtl || 0) * qty);
+    const chargesTotal = Math.round((summary?.other_costs_per_qtl || winner.other_costs_per_qtl || 0) * qty);
+    const netTotal = Math.round(winner.net_price_per_qtl * qty);
+    const gainTotal = Math.round((summary?.profit_gain_per_qtl || 0) * qty);
+
+    const netElem = document.getElementById("harvestNetTotal");
+    if (netElem) netElem.textContent = `₹${netTotal.toLocaleString()}`;
+
+    const grossElem = document.getElementById("harvestGrossValue");
+    if (grossElem) grossElem.textContent = `₹${grossTotal.toLocaleString()}`;
+
+    const freightElem = document.getElementById("harvestFreightDeduction");
+    if (freightElem) freightElem.textContent = `-₹${freightTotal.toLocaleString()}`;
+
+    const chargesElem = document.getElementById("harvestMandiChargesDeduction");
+    if (chargesElem) chargesElem.textContent = `-₹${chargesTotal.toLocaleString()}`;
+
+    const gainBadge = document.getElementById("harvestGainBadge");
+    if (gainBadge) {
+      if (gainTotal > 0 && summary?.is_different_from_home) {
+        gainBadge.style.display = "inline-block";
+        gainBadge.textContent = `+₹${gainTotal.toLocaleString()} Extra vs Home Mandi`;
+      } else {
+        gainBadge.style.display = "none";
+      }
+    }
+  }
+
+  // 3c. Setup Interactive Sensitivity Simulator
+  setupSensitivitySimulator(data);
+
   // 4. Ranked Mandi List
   const rankContainer = document.getElementById("rankedMandisContainer");
   rankContainer.innerHTML = "";
@@ -559,6 +627,159 @@ function renderDashboardUI(data) {
   // 5. Update Google Map Markers
   if (typeof renderGoogleMapMarkers === "function") {
     renderGoogleMapMarkers(data);
+  }
+}
+
+// ==========================================
+// 4b. Interactive Sensitivity Simulator Functions
+// ==========================================
+let simulatorInitialized = false;
+function setupSensitivitySimulator(initialData) {
+  const sliderQty = document.getElementById("sliderQuantity");
+  const sliderRate = document.getElementById("sliderRate");
+  const sliderQtyVal = document.getElementById("sliderQtyValue");
+  const sliderRateVal = document.getElementById("sliderRateValue");
+
+  if (!sliderQty || !sliderRate) return;
+
+  if (!simulatorInitialized) {
+    sliderQty.value = initialData.quantity_quintal || 10;
+    sliderRate.value = initialData.transport_rate || 0.80;
+    if (sliderQtyVal) sliderQtyVal.textContent = `${sliderQty.value} Quintals`;
+    if (sliderRateVal) sliderRateVal.textContent = `₹${parseFloat(sliderRate.value).toFixed(2)} / km / qtl`;
+
+    const handleSimulation = () => {
+      const simQty = parseFloat(sliderQty.value);
+      const simRate = parseFloat(sliderRate.value);
+      if (sliderQtyVal) sliderQtyVal.textContent = `${simQty} Quintals`;
+      if (sliderRateVal) sliderRateVal.textContent = `₹${simRate.toFixed(2)} / km / qtl`;
+
+      recalculateSimulation(simQty, simRate);
+    };
+
+    sliderQty.addEventListener("input", handleSimulation);
+    sliderRate.addEventListener("input", handleSimulation);
+    simulatorInitialized = true;
+  }
+}
+
+function recalculateSimulation(simQty, simRate) {
+  if (!currentComparisonData || !currentComparisonData.ranked_mandis) return;
+  const t = dashboardTranslations[currentLang] || dashboardTranslations.en;
+
+  // Clone and recompute candidate mandis
+  const updatedMandis = currentComparisonData.ranked_mandis.map(m => {
+    if (!m.data_available || m.mandi_price_per_qtl === null) return { ...m };
+    const dist = m.distance_km || 0;
+    const transPerQtl = Math.round(dist * simRate * 100) / 100;
+    const otherPerQtl = m.other_costs_per_qtl || 0;
+    const totalCostPerQtl = Math.round((transPerQtl + otherPerQtl) * 100) / 100;
+    const netPrice = Math.round((m.mandi_price_per_qtl - totalCostPerQtl) * 100) / 100;
+    return {
+      ...m,
+      transport_cost_per_qtl: transPerQtl,
+      total_cost_per_qtl: totalCostPerQtl,
+      net_price_per_qtl: netPrice
+    };
+  });
+
+  // Sort descending by net price
+  updatedMandis.sort((a, b) => (b.net_price_per_qtl || -999999) - (a.net_price_per_qtl || -999999));
+
+  const winner = updatedMandis[0];
+  const homeMandi = updatedMandis.find(m => m.is_home_mandi) || updatedMandis[0];
+  const profitGain = Math.max(0, Math.round((winner.net_price_per_qtl - homeMandi.net_price_per_qtl) * 100) / 100);
+
+  updatedMandis.forEach((m, idx) => {
+    m.rank = idx + 1;
+    m.is_recommended = (idx === 0);
+  });
+
+  // Update Echo Header Qty
+  const qtyEcho = document.getElementById("quantitySelectedValue");
+  if (qtyEcho) qtyEcho.textContent = `${simQty} ${t.quantitySuffix || "Quintals"}`;
+
+  // Update Winner Card
+  const winnerNet = document.getElementById("winnerNetPrice");
+  if (winnerNet) winnerNet.innerHTML = `₹${winner.net_price_per_qtl.toLocaleString()} <span>${t.perQtlSuffix}</span>`;
+  const winnerName = document.getElementById("winnerMandiName");
+  if (winnerName) winnerName.textContent = formatName(winner.mandi_name, currentLang);
+
+  // Update Summary Box
+  const sumList = document.getElementById("summaryListingPrice");
+  if (sumList) sumList.textContent = `₹${winner.mandi_price_per_qtl.toLocaleString()} / qtl`;
+  const sumTrans = document.getElementById("summaryTransportCost");
+  if (sumTrans) sumTrans.textContent = `-₹${winner.transport_cost_per_qtl.toLocaleString()} / qtl`;
+  const sumOther = document.getElementById("summaryOtherCosts");
+  if (sumOther) sumOther.textContent = `-₹${winner.other_costs_per_qtl.toLocaleString()} / qtl`;
+  const sumNet = document.getElementById("summaryNetPrice");
+  if (sumNet) sumNet.textContent = `₹${winner.net_price_per_qtl.toLocaleString()} / qtl`;
+  const sumMandi = document.getElementById("summaryMandiName");
+  if (sumMandi) sumMandi.textContent = formatName(winner.mandi_name, currentLang);
+
+  // Update Total Harvest Cash Card
+  const harvestQtyLabel = document.getElementById("harvestQtyLabel");
+  if (harvestQtyLabel) harvestQtyLabel.textContent = `${simQty} ${t.quantitySuffix || "Quintals"}`;
+
+  const grossTotal = Math.round(winner.mandi_price_per_qtl * simQty);
+  const freightTotal = Math.round(winner.transport_cost_per_qtl * simQty);
+  const chargesTotal = Math.round(winner.other_costs_per_qtl * simQty);
+  const netTotal = Math.round(winner.net_price_per_qtl * simQty);
+  const totalGain = Math.round(profitGain * simQty);
+
+  const netElem = document.getElementById("harvestNetTotal");
+  if (netElem) netElem.textContent = `₹${netTotal.toLocaleString()}`;
+  const grossElem = document.getElementById("harvestGrossValue");
+  if (grossElem) grossElem.textContent = `₹${grossTotal.toLocaleString()}`;
+  const freightElem = document.getElementById("harvestFreightDeduction");
+  if (freightElem) freightElem.textContent = `-₹${freightTotal.toLocaleString()}`;
+  const chargesElem = document.getElementById("harvestMandiChargesDeduction");
+  if (chargesElem) chargesElem.textContent = `-₹${chargesTotal.toLocaleString()}`;
+
+  const gainBadge = document.getElementById("harvestGainBadge");
+  if (gainBadge) {
+    if (totalGain > 0 && winner.mandi_id !== homeMandi.mandi_id) {
+      gainBadge.style.display = "inline-block";
+      gainBadge.textContent = `+₹${totalGain.toLocaleString()} Extra vs Home Mandi`;
+    } else {
+      gainBadge.style.display = "none";
+    }
+  }
+
+  // Re-render Ranked Mandis List
+  const rankContainer = document.getElementById("rankedMandisContainer");
+  if (rankContainer) {
+    rankContainer.innerHTML = "";
+    updatedMandis.forEach(item => {
+      const isWinner = item.is_recommended;
+      const isAvailable = item.data_available !== false && item.mandi_price_per_qtl !== null && item.net_price_per_qtl !== null;
+      const card = document.createElement("div");
+      card.className = `mandi-rank-card ${isWinner ? "is-winner" : ""} ${!isAvailable ? "is-unavailable" : ""}`;
+
+      const cleanMandiName = formatName(item.mandi_name, currentLang);
+      const homeChip = item.is_home_mandi ? `<span class="info-chip" style="font-size:0.75rem; padding:2px 6px; background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">🏠 ${t.homeBadge}</span>` : "";
+      const winnerChip = isWinner ? `<span class="info-chip" style="font-size:0.75rem; padding:2px 6px; background:#fef3c7; color:#92400e; border-color:#fde68a;">🏆 Best</span>` : "";
+
+      card.innerHTML = `
+        <div class="rank-left">
+          <div class="rank-badge-number">${isWinner ? "🏆" : item.rank}</div>
+          <div>
+            <div class="mandi-item-name">${cleanMandiName} ${winnerChip} ${homeChip}</div>
+            <div class="mandi-item-meta">
+              <span>📍 ${item.distance_km} km</span>
+              <span>🏷️ ₹${item.mandi_price_per_qtl.toLocaleString()}/qtl</span>
+              <span>🚛 -₹${item.transport_cost_per_qtl.toLocaleString()}</span>
+              ${item.other_costs_per_qtl > 0 ? `<span>📦 -₹${item.other_costs_per_qtl.toLocaleString()}</span>` : ""}
+            </div>
+          </div>
+        </div>
+        <div class="rank-right">
+          <div class="rank-net-price">₹${item.net_price_per_qtl.toLocaleString()} <span style="font-size:0.75rem; color:var(--text-light);">${t.perQtlSuffix}</span></div>
+          <div class="rank-listing-sub">Harvest: ₹${Math.round(item.net_price_per_qtl * simQty).toLocaleString()}</div>
+        </div>
+      `;
+      rankContainer.appendChild(card);
+    });
   }
 }
 
@@ -979,186 +1200,7 @@ function renderGoogleMapMarkers(data) {
 }
 
 // ==========================================
-// 8. Direct Marketplace: Deal Posting & Management Logic
-// ==========================================
-
-function populateDealForm(data) {
-  const crop = data.crop;
-  const winner = data.recommended_mandi;
-  const homeMandi = data.home_mandi;
-
-  const cropNameInput = document.getElementById("dealCropName");
-  const cropIdInput = document.getElementById("dealCropId");
-  const quantityInput = document.getElementById("dealQuantity");
-  const askingPriceInput = document.getElementById("dealAskingPrice");
-  const locationInput = document.getElementById("dealLocation");
-  const mandiIdInput = document.getElementById("dealMandiId");
-
-  if (cropNameInput && crop) {
-    cropNameInput.value = crop.name;
-  }
-  if (cropIdInput && crop) {
-    cropIdInput.value = crop.id;
-  }
-  if (quantityInput) {
-    quantityInput.value = data.quantity_quintal || quantity || 10;
-  }
-  if (askingPriceInput && winner) {
-    // Smart pre-fill: use engine's calculated recommended net price as a baseline suggestion!
-    askingPriceInput.value = Math.round(winner.net_price_per_qtl);
-  }
-  if (locationInput) {
-    locationInput.value = (homeMandi && homeMandi.name) ? homeMandi.name.split("(")[0].trim() : "Nagpur";
-  }
-  if (mandiIdInput && homeMandi) {
-    mandiIdInput.value = homeMandi.id;
-  }
-}
-
-async function handlePostDeal(e) {
-  e.preventDefault();
-  const farmerName = document.getElementById("dealFarmerName").value.trim();
-  const farmerPhone = document.getElementById("dealFarmerPhone").value.trim();
-  const cropId = document.getElementById("dealCropId").value;
-  const quantity = parseFloat(document.getElementById("dealQuantity").value);
-  const askingPrice = parseFloat(document.getElementById("dealAskingPrice").value);
-  const location = document.getElementById("dealLocation").value.trim();
-  const mandiId = document.getElementById("dealMandiId").value;
-  const submitBtn = document.getElementById("postDealSubmitBtn");
-
-  if (!farmerName || !farmerPhone || !cropId || isNaN(quantity) || isNaN(askingPrice) || !location) {
-    showToast("⚠️ Please fill out all deal fields.");
-    return;
-  }
-
-  submitBtn.disabled = true;
-  submitBtn.textContent = "Posting Deal...";
-
-  try {
-    const res = await fetch("/api/deals", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        farmer_name: farmerName,
-        farmer_phone: farmerPhone,
-        crop_id: cropId,
-        quantity_quintal: quantity,
-        price_per_quintal: askingPrice,
-        location_name: location,
-        mandi_id: mandiId ? parseInt(mandiId) : null
-      })
-    });
-
-    const data = await res.json();
-    if (data.status === "success") {
-      showToast("🎉 Deal listed live on Buyer Marketplace!");
-      loadFarmerDeals(farmerPhone);
-    } else {
-      showToast("⚠️ " + (data.message || "Failed to post deal."));
-    }
-  } catch (err) {
-    console.error("Deal post error:", err);
-    showToast("⚠️ Network error while posting deal.");
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = "🚀 Post Deal to Buyer Marketplace";
-  }
-}
-
-async function loadFarmerDeals(phone) {
-  const container = document.getElementById("farmerDealsContainer");
-  if (!container) return;
-
-  const farmerPhone = phone || (document.getElementById("dealFarmerPhone") ? document.getElementById("dealFarmerPhone").value.trim() : "");
-  const url = farmerPhone ? `/api/deals/farmer?phone=${encodeURIComponent(farmerPhone)}` : "/api/deals/farmer";
-
-  try {
-    const res = await fetch(url);
-    const result = await res.json();
-
-    if (result.status === "success" && result.deals && result.deals.length > 0) {
-      container.innerHTML = "";
-      result.deals.forEach(deal => {
-        const isSold = deal.status === "sold";
-        const card = document.createElement("div");
-        card.style.cssText = `
-          background: ${isSold ? "#f8fafc" : "#ffffff"};
-          border: 1.5px solid ${isSold ? "#cbd5e1" : "rgba(22, 101, 52, 0.2)"};
-          border-radius: var(--radius-md);
-          padding: 0.85rem 1rem;
-          margin-bottom: 0.65rem;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 0.5rem;
-        `;
-
-        card.innerHTML = `
-          <div>
-            <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);">
-              ${deal.crop_name} — <strong>₹${deal.price_per_quintal.toLocaleString()} / qtl</strong>
-              <span style="font-size: 0.75rem; padding: 2px 6px; border-radius: var(--radius-full); margin-left: 6px; background: ${isSold ? '#e2e8f0' : '#dcfce7'}; color: ${isSold ? '#475569' : '#166534'};">
-                ${deal.status.toUpperCase()}
-              </span>
-            </div>
-            <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 2px;">
-              <span>⚖️ ${deal.quantity_quintal} qtl</span> &bull; 
-              <span>📍 ${deal.location_name}</span> &bull; 
-              <span>🕒 ${deal.posted_at.split(' ')[0]}</span>
-            </div>
-            <div style="margin-top: 4px; font-size: 0.85rem; font-weight: 600; color: #0284c7;">
-              💬 ${deal.inquiry_count} Buyer Inquiries Received
-            </div>
-          </div>
-          <div style="display: flex; gap: 0.5rem;">
-            ${!isSold ? `
-              <button class="btn btn-outline" style="min-height:30px; padding:2px 8px; font-size:0.8rem; width:auto; border-color:#16a34a; color:#166534;" onclick="handleMarkSold(${deal.id})">
-                ✅ Mark Sold
-              </button>
-            ` : ''}
-            <button class="btn btn-outline" style="min-height:30px; padding:2px 8px; font-size:0.8rem; width:auto; border-color:#f87171; color:#b91c1c;" onclick="handleDeleteDeal(${deal.id})">
-              🗑️ Delete
-            </button>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    } else {
-      container.innerHTML = `
-        <div style="text-align:center; padding:1.25rem; color:var(--text-muted); font-size:0.9rem;">
-          No direct-sale listings posted yet. Fill out the form above to list your harvest for buyers!
-        </div>
-      `;
-    }
-  } catch (err) {
-    container.innerHTML = `<p style="font-size:0.85rem; color:#b91c1c; text-align:center;">Failed to load listings.</p>`;
-  }
-}
-
-window.handleMarkSold = async function(dealId) {
-  try {
-    await fetch(`/api/deals/${dealId}/sold`, { method: "PATCH" });
-    showToast("✅ Deal marked as sold!");
-    loadFarmerDeals();
-  } catch (e) {
-    showToast("⚠️ Could not update deal.");
-  }
-};
-
-window.handleDeleteDeal = async function(dealId) {
-  if (!confirm("Are you sure you want to remove this deal listing?")) return;
-  try {
-    await fetch(`/api/deals/${dealId}`, { method: "DELETE" });
-    showToast("🗑️ Deal listing removed.");
-    loadFarmerDeals();
-  } catch (e) {
-    showToast("⚠️ Could not remove deal.");
-  }
-};
-
-// ==========================================
-// 9. Initialization & Event Handlers
+// 8. Initialization & Event Handlers
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
   // Language button clicks
@@ -1173,15 +1215,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const refreshBtn = document.getElementById("refreshPricesBtn");
   if (refreshBtn) refreshBtn.addEventListener("click", handleRefreshRates);
 
-  // Deal Form Listener
-  const dealForm = document.getElementById("postDealForm");
-  if (dealForm) dealForm.addEventListener("submit", handlePostDeal);
-
   setLanguage(currentLang);
-  fetchComparisonData().then(() => {
-    if (currentComparisonData) {
-      populateDealForm(currentComparisonData);
-      loadFarmerDeals();
-    }
-  });
+  fetchComparisonData();
 });

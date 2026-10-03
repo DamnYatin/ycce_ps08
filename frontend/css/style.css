@@ -1432,3 +1432,236 @@ body {
     height: 14px;
   }
 }
+
+/* ==========================================================================
+   Phase 4: Trajectory Cards & Sensitivity Simulator Styles
+   ========================================================================== */
+
+.trajectory-scroll-row::-webkit-scrollbar {
+  height: 6px;
+}
+.trajectory-scroll-row::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+.trajectory-scroll-row::-webkit-scrollbar-thumb {
+  background: var(--primary-light);
+  border-radius: 4px;
+}
+
+.day-trajectory-card {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.5rem;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.day-trajectory-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+}
+.day-trajectory-card.is-today {
+  border-color: var(--accent-gold);
+  background: var(--accent-gold-bg);
+}
+.day-trajectory-card.is-peak {
+  border-color: var(--primary);
+  background: var(--primary-bg);
+}
+.day-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--primary-dark);
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+.day-price {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+.day-net {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+.day-gain-pill {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  margin-top: 0.35rem;
+}
+.day-gain-pill.positive {
+  background: #dcfce7;
+  color: #15803d;
+}
+.day-gain-pill.negative {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+@media (max-width: 640px) {
+  #whatIfSection .slider-group {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ==========================================================================
+   Navbar Marketplace Link Button
+   ========================================================================== */
+.nav-marketplace-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 34px;
+  padding: 0.25rem 0.85rem;
+  border-radius: var(--radius-full);
+  background: #ffffff !important;
+  color: #166534 !important;
+  border: 1.5px solid #ffffff;
+  font-size: 0.84rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.nav-marketplace-btn:hover {
+  background: #f0fdf4 !important;
+  color: #14532d !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.nav-marketplace-btn.active {
+  background: #ffffff !important;
+  color: #166534 !important;
+  outline: 2.5px solid #86efac;
+  outline-offset: 1px;
+}
+
+@media (max-width: 520px) {
+  .nav-marketplace-btn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+  .nav-marketplace-btn .nav-marketplace-label {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   Marketplace Landing & Choice Cards
+   ========================================================================== */
+.role-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.role-choice-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 1.5rem;
+  text-decoration: none;
+  color: var(--text-main);
+  box-shadow: var(--shadow-md);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  min-height: 250px;
+}
+
+.role-choice-card:hover, .role-choice-card:focus-visible {
+  border-color: var(--primary);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  outline: 3px solid rgba(22, 101, 52, 0.35);
+}
+
+.role-choice-card.seller-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #15803d, #22c55e);
+}
+
+.role-choice-card.buyer-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #0284c7, #38bdf8);
+}
+
+.role-card-icon {
+  font-size: 3rem;
+  line-height: 1;
+  margin-bottom: 1rem;
+}
+
+.role-card-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--primary-dark);
+  margin-bottom: 0.5rem;
+}
+
+.role-choice-card.buyer-card .role-card-title {
+  color: #0369a1;
+}
+
+.role-card-desc {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+  flex-grow: 1;
+}
+
+.role-card-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  min-height: 48px;
+  transition: all 0.2s ease;
+}
+
+.role-choice-card.seller-card .role-card-btn {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.role-choice-card.buyer-card .role-card-btn {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.role-choice-card:hover .role-card-btn {
+  filter: brightness(1.1);
+}

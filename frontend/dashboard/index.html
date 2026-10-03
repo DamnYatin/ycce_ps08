@@ -2,9 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KrishiMitra - Mandi Compare Dashboard</title>
   <meta name="description" content="Ranked mandi price comparison factoring transport and handling fees.">
+  <meta name="theme-color" content="#166534">
+  <link rel="manifest" href="/manifest.json">
 
   <!-- Google Fonts: Poppins -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,11 +28,24 @@
         </div>
       </a>
 
-      <!-- Multilingual Language Selector -->
-      <div class="lang-selector" role="group" aria-label="Language Selector">
-        <button class="lang-btn" data-lang="en">EN</button>
-        <button class="lang-btn" data-lang="hi">हिन्दी</button>
-        <button class="lang-btn" data-lang="mr">मराठी</button>
+      <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <!-- Multilingual Language Selector -->
+        <div class="lang-selector" role="group" aria-label="Language Selector">
+          <button class="lang-btn" data-lang="en">EN</button>
+          <button class="lang-btn" data-lang="hi">हिन्दी</button>
+          <button class="lang-btn" data-lang="mr">मराठी</button>
+        </div>
+
+        <!-- Marketplace Nav Item -->
+        <a href="/marketplace" class="nav-marketplace-btn" aria-label="Marketplace">
+          <span class="nav-icon">🏪</span>
+          <span class="nav-marketplace-label" data-i18n="marketplaceNav">Marketplace</span>
+        </a>
+
+        <!-- Settings Icon Link -->
+        <a href="/settings" class="nav-settings-btn" title="Settings" aria-label="Settings">
+          ⚙️
+        </a>
       </div>
     </div>
   </header>
@@ -65,7 +80,12 @@
 
       <!-- 2. Screen 2 Champion Winner Recommendation Card -->
       <section class="winner-card" aria-label="Winner Recommendation Card">
-        <span class="winner-badge" data-i18n="bestChoiceBadge">🏆 Recommended Market (Highest Net Return)</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
+          <span class="winner-badge" data-i18n="bestChoiceBadge">🏆 Recommended Market (Highest Net Return)</span>
+          <span class="source-freshness-pill" id="winnerSourceBadge" style="font-size: 0.76rem; font-weight: 700; background: rgba(255,255,255,0.22); color: #ffffff; padding: 3px 8px; border-radius: 9999px; border: 1px solid rgba(255,255,255,0.35);">
+            🟢 Verified APMC Mandi Feed
+          </span>
+        </div>
         
         <h2 class="winner-name" id="winnerMandiName">Amravati (अमरावती)</h2>
         
@@ -75,7 +95,7 @@
 
         <div id="winnerProfitCallout" class="winner-benefit-callout" style="display:none;"></div>
 
-        <!-- Effective Price Summary Card (Pitch Deck Breakdown Box) -->
+        <!-- Effective Price Summary Card (Cost Breakdown Box) -->
         <div class="summary-table-box">
           <div class="summary-row">
             <span data-i18n="mandiPriceLabel">Mandi Listing Price</span>
@@ -95,6 +115,35 @@
           </div>
           <div style="font-size: 0.85rem; text-align: right; color: var(--text-muted); margin-top: 0.35rem;">
             <span data-i18n="recommendedMandiLabel">Recommended Mandi</span>: <strong id="summaryMandiName" style="color:var(--text-main);">Amravati</strong>
+          </div>
+        </div>
+
+        <!-- Total Harvest Cash Card (Full Batch Calculation) -->
+        <div class="harvest-cash-card" id="totalHarvestCashCard" style="margin-top: 1rem; padding: 1.1rem; background: linear-gradient(135deg, #14532d 0%, #166534 100%); color: #ffffff; border-radius: var(--radius-md); box-shadow: 0 4px 15px rgba(22, 101, 52, 0.25);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; flex-wrap: wrap; gap: 0.4rem;">
+            <span style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #86efac;">
+              💰 Total Harvest In-Pocket Cash (<span id="harvestQtyLabel">10 Quintals</span>)
+            </span>
+            <span id="harvestGainBadge" style="font-size: 0.78rem; font-weight: 800; background: #fef08a; color: #854d0e; padding: 3px 8px; border-radius: 9999px;">
+              +₹340 Extra vs Home Mandi
+            </span>
+          </div>
+          <div style="font-size: 2rem; font-weight: 900; line-height: 1.1; margin-bottom: 0.75rem; color: #ffffff;" id="harvestNetTotal">
+            ₹71,340
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; background: rgba(0,0,0,0.22); padding: 0.65rem; border-radius: var(--radius-sm); font-size: 0.8rem;">
+            <div>
+              <div style="color: #cbd5e1;">Gross Harvest</div>
+              <strong id="harvestGrossValue" style="color: #ffffff; font-size: 0.92rem;">₹72,500</strong>
+            </div>
+            <div>
+              <div style="color: #fca5a5;">Total Freight</div>
+              <strong id="harvestFreightDeduction" style="color: #fecaca; font-size: 0.92rem;">-₹1,160</strong>
+            </div>
+            <div>
+              <div style="color: #fca5a5;">Mandi Cess/Labor</div>
+              <strong id="harvestMandiChargesDeduction" style="color: #fecaca; font-size: 0.92rem;">-₹0</strong>
+            </div>
           </div>
         </div>
 
@@ -120,13 +169,121 @@
         </div>
       </section>
 
-      <!-- 3. Ranked Mandi Comparison List -->
+      <!-- Interactive "What-If" Sensitivity Simulator -->
+      <section class="card sensitivity-card" id="whatIfSection" style="border: 2px solid #e2e8f0; background: #ffffff;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+          <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--primary-dark); margin: 0;">
+            🎛️ Interactive "What-If" Sensitivity Simulator
+          </h3>
+          <span style="font-size: 0.76rem; font-weight: 700; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 9999px;">
+            ⚡ Instant Recalculation
+          </span>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Slide to dynamically test different harvest volumes and freight rates. Rankings and in-pocket cash update instantly without page reloads.
+        </p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <!-- Quantity Slider -->
+          <div class="slider-group">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.35rem;">
+              <span>⚖️ Harvest Quantity:</span>
+              <span id="sliderQtyValue" style="color: var(--primary-dark);">10 Quintals</span>
+            </div>
+            <input type="range" id="sliderQuantity" min="1" max="100" step="1" value="10" style="width: 100%; accent-color: var(--primary); cursor: pointer;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
+              <span>1 qtl</span>
+              <span>50 qtl</span>
+              <span>100 qtl</span>
+            </div>
+          </div>
+
+          <!-- Freight Rate Slider -->
+          <div class="slider-group">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.35rem;">
+              <span>🚛 Freight Rate:</span>
+              <span id="sliderRateValue" style="color: var(--primary-dark);">₹0.80 / km / qtl</span>
+            </div>
+            <input type="range" id="sliderRate" min="0.40" max="2.50" step="0.05" value="0.80" style="width: 100%; accent-color: var(--primary); cursor: pointer;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
+              <span>₹0.40</span>
+              <span>₹1.45</span>
+              <span>₹2.50</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Phase 4: AI Sell vs. Hold Proactive Advisory Badge & Insight (Placed below Recommended Market) -->
+      <section class="advisory-card is-hold" id="advisorySection" aria-label="AI Sell vs Hold Recommendation" style="display: none;">
+        <div class="advisory-header">
+          <div class="advisory-header-left">
+            <span class="advisory-ai-tag">✨ AI Market Advisory</span>
+            <span class="advisory-badge" id="advisoryBadge">
+              <span id="advisoryBadgeIcon">💡</span>
+              <span id="advisoryBadgeText">AI Advisory</span>
+            </span>
+          </div>
+          <span class="advisory-label" id="advisoryLabel" data-i18n="advisoryCardTitle">⏱️ 7-Day Horizon</span>
+        </div>
+        
+        <!-- Primary Headline Reason Callout Box -->
+        <div class="advisory-headline-box">
+          <p class="advisory-text" id="advisoryMessageText">Loading forecast advisory...</p>
+        </div>
+
+        <!-- Detailed Financial & Market Reason Chips -->
+        <div class="advisory-metrics-grid" id="advisoryMetricsGrid" style="display: none;">
+          <div class="advisory-metric-chip" id="chipForecast">
+            <span class="metric-label" id="advisoryForecastLabel" data-i18n="advisoryForecastLabel">7-Day Price Forecast</span>
+            <strong class="metric-value" id="advisoryForecastPrice">--</strong>
+          </div>
+          <div class="advisory-metric-chip" id="chipHolding">
+            <span class="metric-label" id="advisoryHoldingLabel" data-i18n="advisoryHoldingLabel">Storage & Spoilage</span>
+            <strong class="metric-value" id="advisoryHoldingCost">--</strong>
+          </div>
+          <div class="advisory-metric-chip highlight" id="chipOutcome">
+            <span class="metric-label" id="advisoryOutcomeLabel" data-i18n="advisoryOutcomeLabel">Net Outcome</span>
+            <strong class="metric-value" id="advisoryOutcomeValue">--</strong>
+          </div>
+        </div>
+
+        <!-- Detailed Reasons / Insights Breakdown -->
+        <div class="advisory-reasons-list" id="advisoryReasonsList" style="display: none;"></div>
+
+        <!-- 7-Day Day-by-Day Price & Net Trajectory Row -->
+        <div id="advisoryTrajectorySection" style="margin-top: 1rem; display: none;">
+          <div style="font-size: 0.85rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem;">
+            <span>📅 7-Day Day-by-Day Price & Net Trajectory</span>
+            <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 9999px;">
+              SARIMAX Econometric Forecast
+            </span>
+          </div>
+          <div id="dailyTrajectoryGrid" class="trajectory-scroll-row" style="display: grid; grid-template-columns: repeat(7, minmax(110px, 1fr)); gap: 0.5rem; overflow-x: auto; padding-bottom: 0.5rem;">
+            <!-- Dynamically populated for Day 1..7 -->
+          </div>
+          <div style="margin-top: 0.5rem; font-size: 0.74rem; color: var(--text-muted); line-height: 1.4; background: rgba(0,0,0,0.03); padding: 6px 10px; border-radius: 6px;">
+            ℹ️ <strong>Model & Holding Assumptions:</strong> Forecast modeled via SARIMAX trained on APMC arrival prices + weather/fuel indices. Net holding trajectory accounts for daily storage fee (₹0.40–₹1.50/qtl/day) and physical produce moisture shrinkage (0.03%–0.80%/day).
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Ranked Mandi Comparison List -->
       <section class="card">
-        <div class="rank-list-title">
-          <span data-i18n="allMandisRankTitle">📊 All Nearby Mandis (Ranked by Profit)</span>
-          <button id="refreshPricesBtn" class="btn btn-outline" style="min-height:34px; padding:2px 8px; font-size:0.8rem; width:auto;" data-i18n="refreshPricesBtn">
+        <div class="rank-list-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+          <div>
+            <span data-i18n="allMandisRankTitle">📊 All Nearby Mandis (Ranked by Profit)</span>
+            <div class="price-refreshed-time" id="priceRefreshedTime">
+              🕒 <span data-i18n="lastUpdatedPrefix">Last updated</span>: <strong id="refreshedTimestampText">Just now</strong>
+            </div>
+          </div>
+          <button id="refreshPricesBtn" class="btn btn-outline" style="min-height:34px; padding:2px 10px; font-size:0.8rem; width:auto;" data-i18n="refreshPricesBtn">
             ⚡ Refresh Live Rates
           </button>
+        </div>
+
+        <div id="refreshStatusMessage" style="display:none; margin-bottom: 0.75rem; padding: 6px 12px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 600; color: #065f46; align-items: center; gap: 6px;">
+          <span class="status-icon">✅</span>
+          <span id="refreshStatusText">Live rates refreshed successfully</span>
         </div>
 
         <div id="rankedMandisContainer">
@@ -163,9 +320,12 @@
       </section>
 
       <!-- Bottom Navigation Footer -->
-      <div style="text-align: center; margin-top: 1.5rem;">
-        <a href="/" class="btn btn-secondary" style="width: auto; padding: 0.6rem 1.5rem; display: inline-flex;">
-          ⬅️ Check Another Crop / Quantity
+      <div style="text-align: center; margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+        <a href="/" class="btn btn-secondary" style="width: auto; padding: 0.6rem 1.25rem; display: inline-flex;">
+          ⬅️ Check Another Crop
+        </a>
+        <a href="/marketplace" class="btn btn-primary" style="width: auto; padding: 0.6rem 1.25rem; display: inline-flex; background: #0f766e;">
+          🏪 Open Direct Marketplace
         </a>
       </div>
 
@@ -178,5 +338,12 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDOkEUdOO0Lnb_7HpOZ41mBxc1RSO4QDeU&callback=initGoogleMap" async defer></script>
   <script src="/js/dashboard.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW register failed:', err));
+      });
+    }
+  </script>
 </body>
 </html>

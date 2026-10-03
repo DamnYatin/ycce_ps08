@@ -28,6 +28,7 @@ const translations = {
     quickSelectLabel: "Quick Select:",
     adminLink: "⚙️ Admin Settings",
     buyerMarket: "🛒 Buyer Market",
+    marketplaceNav: "Marketplace",
     tickerDefault: "🔥 Live: Highest price discovery active across Vidarbha APMCs"
   },
   hi: {
@@ -44,6 +45,7 @@ const translations = {
     quickSelectLabel: "त्वरित चयन:",
     adminLink: "⚙️ व्यवस्थापक सेटिंग्स",
     buyerMarket: "🛒 खरीदार बाजार",
+    marketplaceNav: "मार्केटप्लेस",
     tickerDefault: "🔥 लाइव: विदर्भ की सभी मंडियों में सर्वोत्तम शुद्ध मूल्य खोज चालू है"
   },
   mr: {
@@ -60,6 +62,7 @@ const translations = {
     quickSelectLabel: "त्वरित निवडा:",
     adminLink: "⚙️ ॲडमिन सेटिंग्ज",
     buyerMarket: "🛒 खरेदीदार बाजार",
+    marketplaceNav: "मार्केटप्लेस",
     tickerDefault: "🔥 थेट अपडेट: अमरावती व नागपूर बाजारपेठेत कापसाला उच्च दर"
   }
 };

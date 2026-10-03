@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KrishiMitra - Seller Marketplace Dashboard</title>
+  <meta name="description" content="List your harvest directly to verified buyers across Maharashtra with zero mandi commissions.">
+  <meta name="theme-color" content="#166534">
+  <link rel="manifest" href="/manifest.json">
+
+  <!-- Google Fonts: Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .seller-header-nav {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .role-switch-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .role-switch-badge:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+    .deal-skeleton {
+      background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+      background-size: 200% 100%;
+      animation: skeletonLoading 1.5s infinite;
+      border-radius: var(--radius-md);
+      height: 90px;
+      margin-bottom: 0.75rem;
+    }
+    @keyframes skeletonLoading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .seller-feedback-banner {
+      display: none;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .seller-feedback-banner.success {
+      display: flex;
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+    }
+    .seller-feedback-banner.error {
+      display: flex;
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <a href="/" class="brand-wrapper">
+        <span class="brand-icon">🌾</span>
+        <div>
+          <h1 class="brand-title" data-i18n="appTitle">KrishiMitra</h1>
+          <p class="brand-subtitle" data-i18n="sellerHeaderSubtitle">Seller Direct Marketplace</p>
+        </div>
+      </a>
+
+      <div class="seller-header-nav">
+        <!-- Switch Role Link -->
+        <a href="/marketplace" class="role-switch-badge" data-i18n="switchRoleLink" title="Switch Marketplace Role">
+          🔄 <span data-i18n="switchRoleText">Switch Role</span>
+        </a>
+
+        <!-- Open Buyer Market -->
+        <a href="/marketplace/buyer" class="btn btn-outline" style="min-height: 32px; padding: 2px 10px; font-size: 0.8rem; background: rgba(255,255,255,0.2); color: #fff; border-color: rgba(255,255,255,0.4); width: auto;" data-i18n="buyerMarketBtn">
+          🛒 Buyer Market
+        </a>
+
+        <!-- Multilingual Language Toggle -->
+        <div class="lang-selector" role="group" aria-label="Language Selector">
+          <button class="lang-btn active" data-lang="en">EN</button>
+          <button class="lang-btn" data-lang="hi">हिन्दी</button>
+          <button class="lang-btn" data-lang="mr">मराठी</button>
+        </div>
+
+        <!-- Marketplace Nav Item (Active) -->
+        <a href="/marketplace" class="nav-marketplace-btn active" aria-label="Marketplace" aria-current="page">
+          <span class="nav-icon">🏪</span>
+          <span class="nav-marketplace-label" data-i18n="marketplaceNav">Marketplace</span>
+        </a>
+
+        <!-- Settings Icon Link -->
+        <a href="/settings" class="nav-settings-btn" title="Settings" aria-label="Settings">
+          ⚙️
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="main-content" style="max-width: 900px;">
+
+    <!-- Inline Feedback Banner for Success/Error -->
+    <div id="sellerFeedbackBanner" class="seller-feedback-banner" role="alert" aria-live="assertive">
+      <span id="sellerFeedbackMessage"></span>
+      <button type="button" id="sellerFeedbackDismiss" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:inherit;">&times;</button>
+    </div>
+
+    <!-- 1. Direct Marketplace: List Your Deal Card -->
+    <section class="card" id="listDealSection" style="border: 2px solid rgba(22, 101, 52, 0.25); background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%); margin-bottom: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <h2 style="font-size: 1.15rem; font-weight: 800; color: var(--primary-dark); margin: 0;" data-i18n="listDealTitle">
+          📢 List Your Deal — Sell Directly to Buyers
+        </h2>
+        <span style="font-size: 0.78rem; font-weight: 700; background: var(--primary-bg); color: var(--primary-dark); padding: 0.2rem 0.6rem; border-radius: var(--radius-full);" data-i18n="spamProtected">
+          🛡️ Spam-Protected
+        </span>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;" data-i18n="listDealDesc">
+        Prefer selling directly to verified traders without mandi intermediaries? List your harvest here. Your phone number stays hidden until genuine buyers express interest.
+      </p>
+
+      <form id="sellerPostDealForm" class="form-grid-2" novalidate>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="dealFarmerName" class="form-label" style="font-size: 0.85rem;" data-i18n="labelFarmerName">👤 Your Name</label>
+          <input type="text" id="dealFarmerName" class="form-input" placeholder="e.g. Ramesh Patil" data-i18n-placeholder="placeholderFarmerName" required>
+          <span class="form-hint" id="farmerNameError" style="color: #dc2626; font-size: 0.75rem; display: none;"></span>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="dealFarmerPhone" class="form-label" style="font-size: 0.85rem;" data-i18n="labelFarmerPhone">📞 Phone Number</label>
+          <input type="tel" id="dealFarmerPhone" class="form-input" placeholder="10-digit number" data-i18n-placeholder="placeholderFarmerPhone" required pattern="^[6-9][0-9]{9}$" maxlength="10">
+          <span class="form-hint" id="farmerPhoneError" style="color: #dc2626; font-size: 0.75rem; display: none;"></span>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="dealCropSelect" class="form-label" style="font-size: 0.85rem;" data-i18n="labelCrop">🌱 Crop</label>
+          <select id="dealCropSelect" class="form-select" required>
+            <option value="" disabled selected data-i18n="selectCropPrompt">Select crop to sell...</option>
+          </select>
+          <span class="form-hint" id="cropError" style="color: #dc2626; font-size: 0.75rem; display: none;"></span>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="dealQuantity" class="form-label" style="font-size: 0.85rem;" data-i18n="labelQuantity">⚖️ Quantity (Quintals)</label>
+          <input type="number" id="dealQuantity" class="form-input" step="0.1" min="0.1" max="10000" placeholder="e.g. 25" data-i18n-placeholder="placeholderQuantity" required>
+          <span class="form-hint" id="quantityError" style="color: #dc2626; font-size: 0.75rem; display: none;"></span>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="dealAskingPrice" class="form-label" style="font-size: 0.85rem;" data-i18n="labelPrice">💰 Asking Price (₹ / quintal)</label>
+          <input type="number" id="dealAskingPrice" class="form-input" step="1" min="1" max="100000" placeholder="e.g. 7200" data-i18n-placeholder="placeholderPrice" required style="font-weight: 700; color: var(--primary-dark);">
+          <span class="form-hint" id="priceError" style="color: #dc2626; font-size: 0.75rem; display: none;"></span>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="dealLocation" class="form-label" style="font-size: 0.85rem;" data-i18n="labelLocation">📍 Your Location</label>
+          <input type="text" id="dealLocation" class="form-input" placeholder="e.g. Nagpur / Wardha Road" data-i18n-placeholder="placeholderLocation" required>
+          <input type="hidden" id="dealMandiId" value="">
+          <span class="form-hint" id="locationError" style="color: #dc2626; font-size: 0.75rem; display: none;"></span>
+        </div>
+
+        <div style="grid-column: 1 / -1; margin-top: 0.5rem;">
+          <button type="submit" class="btn btn-primary" id="sellerPostSubmitBtn" style="font-size: 0.95rem; min-height: 48px;">
+            <span id="sellerSubmitBtnText" data-i18n="postDealBtn">🚀 Post Deal to Buyer Marketplace</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 2. Seller's Active Listings & Inquiries Card -->
+    <section class="card" id="farmerDealsSection">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+        <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin: 0;" data-i18n="activeListingsTitle">
+          📋 My Active Deal Listings
+        </h3>
+        <a href="/marketplace/buyer" class="btn btn-outline" style="min-height: 32px; padding: 2px 10px; font-size: 0.82rem; width: auto;" data-i18n="openBuyerMarketBtn">
+          🛒 Open Buyer Market
+        </a>
+      </div>
+
+      <div id="sellerDealsContainer" aria-live="polite">
+        <!-- Populated dynamically via seller.js -->
+        <div class="deal-skeleton"></div>
+        <div class="deal-skeleton"></div>
+      </div>
+    </section>
+
+    <!-- Bottom Navigation Footer -->
+    <div style="text-align: center; margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+      <a href="/" class="btn btn-secondary" style="width: auto; padding: 0.6rem 1.25rem; display: inline-flex;" data-i18n="backToEstimator">
+        ⬅️ Check Another Crop
+      </a>
+      <a href="/marketplace" class="btn btn-outline" style="width: auto; padding: 0.6rem 1.25rem; display: inline-flex; border-color: var(--primary); color: var(--primary-dark);" data-i18n="switchRoleBottom">
+        🔄 Switch Role (Seller / Buyer)
+      </a>
+      <a href="/marketplace/buyer" class="btn btn-primary" style="width: auto; padding: 0.6rem 1.25rem; display: inline-flex; background: #0f766e;" data-i18n="viewBuyerMarketBottom">
+        🛒 View Buyer Marketplace
+      </a>
+    </div>
+
+  </main>
+
+  <!-- Delete Confirmation Modal Dialog -->
+  <div id="deleteConfirmModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center; padding: 1rem;">
+    <div class="card" style="max-width: 400px; width: 100%; border: 2px solid #fca5a5;">
+      <h3 style="font-size: 1.1rem; font-weight: 800; color: #b91c1c; margin-bottom: 0.5rem;" data-i18n="confirmDeleteTitle">
+        🗑️ Confirm Listing Removal
+      </h3>
+      <p style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 1.25rem;" data-i18n="confirmDeletePrompt">
+        Are you sure you want to remove this deal listing? Genuine buyers will no longer be able to submit inquiries for this lot.
+      </p>
+      <div style="display: flex; gap: 0.65rem; justify-content: flex-end;">
+        <button type="button" id="cancelDeleteBtn" class="btn btn-secondary" style="width: auto; padding: 0.5rem 1rem;" data-i18n="cancelBtn">
+          Cancel
+        </button>
+        <button type="button" id="confirmDeleteBtn" class="btn btn-primary" style="width: auto; padding: 0.5rem 1rem; background: #dc2626; border-color: #b91c1c;" data-i18n="deleteListingBtn">
+          Delete Listing
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container" aria-live="assertive"></div>
+
+  <script src="/marketplace/js/seller.js"></script>
+</body>
+</html>

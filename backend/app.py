@@ -17,7 +17,7 @@ backend_dir = Path(__file__).resolve().parent
 if str(backend_dir) not in sys.path:
     sys.path.insert(0, str(backend_dir))
 
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, redirect
 
 try:
     from flask_cors import CORS
@@ -89,11 +89,28 @@ def serve_settings():
     """Serves System Settings Screen."""
     return send_from_directory(str(FRONTEND_DIR), "settings.html")
 
+@app.route("/marketplace")
+def serve_marketplace_landing():
+    """Serves Marketplace Choice Landing: Seller or Buyer."""
+    return send_from_directory(str(FRONTEND_DIR / "marketplace"), "index.html")
+
+@app.route("/marketplace/seller")
+def serve_marketplace_seller():
+    """Serves Marketplace Seller Dashboard."""
+    return send_from_directory(str(FRONTEND_DIR / "marketplace"), "seller.html")
+
+@app.route("/marketplace/buyer")
+def serve_marketplace_buyer():
+    """Serves Marketplace Buyer Feed."""
+    return send_from_directory(str(FRONTEND_DIR / "buyer"), "index.html")
+
 @app.route("/buyer")
-def serve_buyer():
-    """Serves Screen 4: Buyer Marketplace Screen."""
-    buyer_dir = FRONTEND_DIR / "buyer"
-    return send_from_directory(str(buyer_dir), "index.html")
+def redirect_buyer():
+    """Redirects legacy /buyer route to /marketplace/buyer preserving query parameters."""
+    target = "/marketplace/buyer"
+    if request.query_string:
+        target += f"?{request.query_string.decode('utf-8')}"
+    return redirect(target, code=302)
 
 @app.route("/<path:path>")
 def serve_static(path):
@@ -468,12 +485,32 @@ def admin_update_price():
     res = AdminController.update_price(crop_id, mandi_id, price)
     return jsonify(res)
 
+def get_available_port(preferred_port=5000):
+    import socket
+    if "PORT" in os.environ:
+        try:
+            return int(os.environ["PORT"])
+        except ValueError:
+            pass
+
+    for p in range(preferred_port, preferred_port + 25):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(("0.0.0.0", p))
+                return p
+            except OSError:
+                continue
+    return preferred_port
+
 if __name__ == "__main__":
     if sys.platform == "win32":
         try:
             sys.stdout.reconfigure(encoding='utf-8')
         except Exception:
             pass
-    port = int(os.environ.get("PORT", 5000))
+    port = get_available_port(5000)
+    if port != 5000 and "PORT" not in os.environ:
+        print(f"[!] Port 5000 is currently occupied (e.g. macOS AirPlay Receiver). Automatically using port {port}.")
     print(f"[*] KrishiMitra Market Estimator starting on http://127.0.0.1:{port}")
     app.run(host="0.0.0.0", port=port, debug=Config.DEBUG)
+
