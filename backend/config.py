@@ -32,7 +32,7 @@ class Config:
     USE_MOCK_DATA = os.environ.get("USE_MOCK_DATA", "False").lower() in ("true", "1")
     
     # External API Keys
-    AGMARKNET_API_KEY = os.environ.get("AGMARKNET_API_KEY", "579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b")
+    AGMARKNET_API_KEY = os.environ.get("AGMARKNET_API_KEY", "52abaf25b87a219ffce52547526f4a14fd65e4e88df179e2cefb6c30bd75417d")
     AGMARKNET_RESOURCE_ID = os.environ.get("AGMARKNET_RESOURCE_ID", "9ef84268-d588-465a-a308-a864a43d0070")
     AGMARKNET_FORMAT = "xml"
     
